@@ -2,7 +2,9 @@ spring:
   application:
     name: movieuniverse
   datasource:
-    url: jdbc:postgresql://localhost:5432/movieuniverse
+    # POSTGRES_PORT is intentionally absent from .env.example so the default below
+    # applies. Set it only if something already owns 5432 on your machine.
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/movieuniverse
     username: ${POSTGRES_USER:movieuniverse}
     password: ${POSTGRES_PASSWORD:movieuniverse}
   jpa:
