@@ -52,10 +52,16 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- Spring does not read .env the way Docker Compose does; this bridges the gap -->
+		<!--
+			Spring does not read .env the way Docker Compose does; this bridges the gap.
+			Must be springboot4-dotenv, not the plain spring-dotenv artifact: since 5.x
+			the latter is only the core library and carries no registration metadata, so
+			on Boot 4 it loads nothing and every placeholder quietly falls back to its
+			default instead of failing.
+		-->
 		<dependency>
 			<groupId>me.paulschwarz</groupId>
-			<artifactId>spring-dotenv</artifactId>
+			<artifactId>springboot4-dotenv</artifactId>
 			<version>${spring-dotenv.version}</version>
 		</dependency>
 		<dependency>

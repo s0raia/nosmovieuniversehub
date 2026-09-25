@@ -1,3 +1,12 @@
+# .env lives at the repo root, because Docker Compose reads it from there. A
+# native `./mvnw spring-boot:run` starts the JVM in backend/, so spring-dotenv
+# has to be pointed one level up or it finds nothing and silently falls back to
+# the defaults below. Inside the container the variables are real environment
+# variables and no file is read at all.
+springdotenv:
+  directory: ..
+  ignore-if-missing: true
+
 spring:
   application:
     name: movieuniverse
