@@ -1,0 +1,99 @@
+.card {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.poster {
+  aspect-ratio: 2 / 3;
+  background-color: var(--teal-tint);
+  border-bottom: var(--border-width) solid var(--ink);
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* The seed holds two films called Dune and two called The Lion King, so the
+   year is part of the identity rather than decoration. */
+.year {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ratings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.badge {
+  border: 3px solid var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  /* Vote counts run long ("38,000 votes"), so badges must be allowed to shrink
+     and wrap rather than push past the card edge. */
+  min-width: 0;
+  padding: 2px var(--space-2);
+}
+
+.badgeTmdb {
+  background-color: var(--teal-tint);
+  color: var(--ink);
+}
+
+.badgeCombined {
+  background-color: var(--teal-mid);
+  color: var(--white);
+}
+
+/* A film with no votes anywhere shows this instead of a number. Never "0". */
+.badgeNoVotes {
+  background-color: var(--paper);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.starButton {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow-pressed);
+  cursor: pointer;
+  font-size: 1.125rem;
+  line-height: 1;
+  padding: var(--space-1) var(--space-2);
+  position: absolute;
+  right: var(--space-2);
+  top: var(--space-2);
+}
+
+.starButton:hover {
+  background-color: var(--magenta-tint);
+}
+
+.starButton:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.starButtonActive {
+  background-color: var(--magenta);
+  color: var(--white);
+}

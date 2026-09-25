@@ -1,0 +1,55 @@
+/*
+  MovieUniverse Hub design tokens.
+
+  Layout is inspired by Trakt: dense poster grids, rating badges on the card.
+  The treatment is neo-brutalist: flat fills, thick borders, hard offset shadows
+  with no blur, no gradients.
+
+  Palette is a teal/magenta reading of the "Derpy Tiger" structure (navy ink +
+  one main + one accent), with Derpy's gold dropped so poster art stays the only
+  source of visual heat.
+
+  Every colour used behind text is verified at >= 7:1 (WCAG AAA) against both
+  --paper and --white. Measured ratios are noted inline; recheck if you change
+  a value.
+*/
+
+:root {
+  /* Ink and surfaces */
+  --ink: #0B1F24;          /* 15.77 on paper, 16.99 on white */
+  --paper: #F4F7F6;
+  --white: #FFFFFF;
+
+  /* Text */
+  --text-muted: #3D4F55;   /* 7.96 on paper - AAA, safe for secondary text */
+
+  /* Teal - main */
+  --teal: #0F4C5C;         /* 8.82 on paper */
+  --teal-mid: #12594E;     /* 8.19 on white, 7.60 on paper - AAA on fills */
+  --teal-tint: #DCEAE6;    /* surface only; ink on it reads 13.72 */
+
+  /* Magenta - accent, used for the star and focus ring */
+  --magenta: #7A1E5C;      /* 8.99 on paper */
+  --magenta-tint: #F6E3EF; /* surface only; ink on it reads 13.88 */
+
+  /* Bordeaux - destructive and "deleted playlist" state */
+  --bordeaux: #6B1D36;     /* 10.51 on paper */
+
+  /* Neo-brutalist geometry, matching the chaotic-the-harmony treatment */
+  --border-width: 4px;
+  --shadow-offset: 6px;
+  --shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+  --shadow-pressed: 2px 2px 0 var(--ink);
+  --radius: 0;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+
+  /* Focus: thick magenta ring, offset so it never sits on the border itself */
+  --focus-ring: 3px solid var(--magenta);
+  --focus-offset: 3px;
+}
