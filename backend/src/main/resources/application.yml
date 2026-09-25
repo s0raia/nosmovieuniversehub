@@ -35,9 +35,15 @@ tmdb:
 
 app:
   seed:
+    # Import only into an empty database, so restarting does not undo edits made
+    # through the UI. Use --import=<location> to load a file on top of existing data.
     auto-on-empty: true
     files:
       - classpath:data/seed_playlists.json
+    # The seed file carries usernames but no credentials, so seeded users need an
+    # invented password. Blank falls back to a literal published in the README,
+    # which keeps the clone-and-run path working.
+    default-password: ${SEED_DEFAULT_PASSWORD:}
 
 logging:
   level:
