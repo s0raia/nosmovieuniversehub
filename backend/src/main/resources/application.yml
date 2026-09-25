@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: movieuniverse
+  datasource:
+    url: jdbc:postgresql://localhost:5432/movieuniverse
+    username: ${POSTGRES_USER:movieuniverse}
+    password: ${POSTGRES_PASSWORD:movieuniverse}
+  jpa:
+    hibernate:
+      # Flyway owns the schema. Hibernate only checks that entities match it.
+      ddl-auto: validate
+    # Off by default here: Spring's default of true holds a session open for the
+    # whole request and hides lazy-loading mistakes until they become slow queries.
+    open-in-view: false
+  flyway:
+    enabled: true
+
+tmdb:
+  base-url: https://api.themoviedb.org/3
+  read-access-token: ${TMDB_API_READ_TOKEN}
+  # Explicit rather than relying on the account default, so stored titles and
+  # overviews are English regardless of whose key is used.
+  language: en-US
+
+app:
+  seed:
+    auto-on-empty: true
+    files:
+      - classpath:data/seed_playlists.json
+
+logging:
+  level:
+    org.flywaydb: info
