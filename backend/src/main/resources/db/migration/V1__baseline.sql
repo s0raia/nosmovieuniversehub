@@ -21,7 +21,9 @@ CREATE TABLE movie (
     overview           TEXT,
     poster_path        TEXT,
     runtime            INTEGER,
-    tmdb_vote_average  NUMERIC(4, 3),
+    -- (5, 3) not (4, 3): a film with one or two perfect votes averages a clean
+    -- 10.0, which overflows four digits of precision.
+    tmdb_vote_average  NUMERIC(5, 3),
     tmdb_vote_count    INTEGER     NOT NULL DEFAULT 0,
     fetched_at         TIMESTAMPTZ,
     -- TMDB sends 0.0 rather than null for an unvoted film. The briefing requires
