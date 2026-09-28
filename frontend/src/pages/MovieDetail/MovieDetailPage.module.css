@@ -111,3 +111,83 @@
   outline: var(--focus-ring);
   outline-offset: var(--focus-offset);
 }
+
+.userActions {
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+}
+
+.starAction {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: var(--space-2) var(--space-3);
+}
+
+.starActionActive {
+  background-color: var(--magenta-tint);
+}
+
+.starAction:focus-visible {
+  outline: 3px solid var(--magenta);
+  outline-offset: 2px;
+}
+
+.rateForm {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.rateLabel {
+  display: flex;
+  flex-direction: column;
+  font-weight: 700;
+  gap: var(--space-1);
+}
+
+.rateSelect {
+  background-color: var(--white);
+  border: 3px solid var(--ink);
+  font: inherit;
+  padding: var(--space-2);
+}
+
+.rateSelect:focus-visible {
+  outline: 3px solid var(--magenta);
+  outline-offset: 2px;
+}
+
+.rateButton {
+  background-color: var(--teal);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  color: var(--white);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: var(--space-2) var(--space-3);
+}
+
+.rateButton:focus-visible {
+  outline: 3px solid var(--magenta);
+  outline-offset: 2px;
+}
+
+.rateButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.rateMessage {
+  font-weight: 700;
+  margin-top: var(--space-2);
+}

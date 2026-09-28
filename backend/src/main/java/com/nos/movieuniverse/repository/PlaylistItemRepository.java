@@ -30,4 +30,8 @@ public interface PlaylistItemRepository extends JpaRepository<PlaylistItem, Long
      * two positions in one playlist.
      */
     Optional<PlaylistItem> findByPlaylistIdAndPosition(Long playlistId, int position);
+
+    List<PlaylistItem> findByPlaylistIdAndMovieTmdbId(Long playlistId, Long tmdbId);
+
+    int countByPlaylistId(Long playlistId);
 }

@@ -33,3 +33,20 @@ export type Playlist = {
   filmCount: number;
   films: Movie[];
 };
+
+export type PlaylistCompareSide = {
+  playlistId: number;
+  name: string;
+  owner: string;
+  filmCount: number;
+  averageCombinedRating: number | null;
+  scorableFilmCount: number;
+};
+
+export type PlaylistCompare = {
+  left: PlaylistCompareSide;
+  right: PlaylistCompareSide;
+  winner: 'left' | 'right' | 'tie' | 'insufficient';
+  commonFilmCount: number;
+  commonFilms: Movie[];
+};

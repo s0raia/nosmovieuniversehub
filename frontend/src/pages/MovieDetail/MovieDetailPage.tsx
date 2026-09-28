@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchMovie, type MovieDetail } from '../../api/catalogue';
+import { fetchMovie, fetchMyRating, saveMyRating, type MovieDetail } from '../../api/catalogue';
+import { useAuth } from '../../contexts/AuthContext';
+import { useStarred } from '../../contexts/StarredContext';
 import page from '../../layouts/Page.module.css';
 import styles from './MovieDetailPage.module.css';
 
@@ -28,7 +30,12 @@ function formatRuntime(minutes: number | null): string | null {
 export function MovieDetailPage() {
   const { tmdbId: tmdbIdParam } = useParams();
   const tmdbId = Number(tmdbIdParam);
+  const { state: authState } = useAuth();
+  const { isStarred, toggleStarred } = useStarred();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const [myStars, setMyStars] = useState<number | ''>('');
+  const [ratingMessage, setRatingMessage] = useState<string | null>(null);
+  const [savingRating, setSavingRating] = useState(false);
 
   useEffect(() => {
     if (!Number.isFinite(tmdbId)) {
@@ -57,6 +64,52 @@ export function MovieDetailPage() {
     };
   }, [tmdbId]);
 
+  useEffect(() => {
+    if (authState.status !== 'signed-in' || !Number.isFinite(tmdbId)) {
+      setMyStars('');
+      return;
+    }
+    let active = true;
+    fetchMyRating(tmdbId)
+      .then((payload) => {
+        if (active) {
+          setMyStars(payload.stars ?? '');
+        }
+      })
+      .catch(() => {
+        if (active) setMyStars('');
+      });
+    return () => {
+      active = false;
+    };
+  }, [authState.status, tmdbId]);
+
+  async function onSaveRating(event: FormEvent) {
+    event.preventDefault();
+    if (authState.status !== 'signed-in' || myStars === '') {
+      return;
+    }
+    setSavingRating(true);
+    setRatingMessage(null);
+    try {
+      await saveMyRating(tmdbId, Number(myStars));
+      setRatingMessage('Rating saved.');
+      const movie = await fetchMovie(tmdbId);
+      setState({ status: 'loaded', movie });
+    } catch (err) {
+      setRatingMessage(err instanceof Error ? err.message : 'Could not save rating');
+    } finally {
+      setSavingRating(false);
+    }
+  }
+
+  const displayTitle =
+    state.status === 'loaded' && state.movie.title
+      ? state.movie.releaseYear
+        ? `${state.movie.title} (${state.movie.releaseYear})`
+        : state.movie.title
+      : null;
+
   return (
     <>
       <Link className={styles.backLink} to="/">
@@ -84,11 +137,10 @@ export function MovieDetailPage() {
           />
 
           <div>
-            <h1 className={styles.title}>{state.movie.title ?? 'Untitled'}</h1>
+            <h1 className={styles.title}>{displayTitle ?? 'Untitled'}</h1>
 
             <p className={styles.meta}>
               {[
-                state.movie.releaseYear ?? 'Year unknown',
                 state.movie.originalTitle &&
                 state.movie.originalTitle !== state.movie.title &&
                 `Original title: ${state.movie.originalTitle}`,
@@ -148,6 +200,47 @@ export function MovieDetailPage() {
               <p className={styles.overview}>{state.movie.overview}</p>
             ) : (
               <p className={styles.overview}>No overview from TMDB yet.</p>
+            )}
+
+            {authState.status === 'signed-in' && (
+              <div className={styles.userActions}>
+                <button
+                  type="button"
+                  className={`${styles.starAction} ${isStarred(tmdbId) ? styles.starActionActive : ''}`}
+                  onClick={() => void toggleStarred(tmdbId)}
+                  aria-pressed={isStarred(tmdbId)}
+                >
+                  {isStarred(tmdbId) ? '★ In Starred picks' : '☆ Add to Starred picks'}
+                </button>
+
+                <form className={styles.rateForm} onSubmit={onSaveRating}>
+                  <label className={styles.rateLabel}>
+                    Your rating (1–10)
+                    <select
+                      className={styles.rateSelect}
+                      value={myStars}
+                      onChange={(event) =>
+                        setMyStars(event.target.value === '' ? '' : Number(event.target.value))
+                      }
+                    >
+                      <option value="">Not rated</option>
+                      {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button className={styles.rateButton} type="submit" disabled={savingRating || myStars === ''}>
+                    {savingRating ? 'Saving…' : 'Save rating'}
+                  </button>
+                </form>
+                {ratingMessage && (
+                  <p className={styles.rateMessage} role="status">
+                    {ratingMessage}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </article>

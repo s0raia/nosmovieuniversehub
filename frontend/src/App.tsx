@@ -6,6 +6,7 @@ import { AuthAccountPage } from './pages/Account/AuthAccountPage';
 import { CataloguePage } from './pages/Catalogue/CataloguePage';
 import { HomePage } from './pages/Home/HomePage';
 import { MovieDetailPage } from './pages/MovieDetail/MovieDetailPage';
+import { ComparePlaylistsPage } from './pages/Compare/ComparePlaylistsPage';
 import { PlaylistsPage } from './pages/Playlists/PlaylistsPage';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/catalogue" element={<CataloguePage />} />
             <Route path="/movies/:tmdbId" element={<MovieDetailPage />} />
             <Route path="/playlists" element={<PlaylistsPage />} />
+            <Route path="/compare" element={<ComparePlaylistsPage />} />
             <Route path="/account" element={<AuthAccountPage />} />
             <Route path="/login" element={<AuthAccountPage />} />
             <Route path="/register" element={<AuthAccountPage />} />

@@ -32,6 +32,9 @@ export function AppShell({ children }: AppShellProps) {
             <NavLink className={navClass} to="/playlists">
               Playlists
             </NavLink>
+            <NavLink className={navClass} to="/compare">
+              Compare
+            </NavLink>
 
             {state.status === 'signed-in' ? (
               <>

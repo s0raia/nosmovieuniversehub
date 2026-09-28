@@ -50,8 +50,7 @@ export function MovieCard({
       />
 
       <div className={styles.body}>
-        <h3 className={styles.title}>{title}</h3>
-        <span className={styles.year}>{year ?? 'Year unknown'}</span>
+        <h3 className={styles.title}>{label}</h3>
 
         <div className={styles.ratings}>
           {tmdbAverage === null || tmdbVotes === 0 ? (

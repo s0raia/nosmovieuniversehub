@@ -1,3 +1,36 @@
+.myPlaylists {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+}
+
+.myPlaylistsHeading {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.myPlaylistsList {
+  list-style: none;
+  margin: var(--space-3) 0;
+  padding: 0;
+}
+
+.myPlaylistItem {
+  margin-bottom: var(--space-1);
+}
+
+.myPlaylistsLink {
+  color: var(--teal);
+  font-weight: 700;
+}
+
+.myPlaylistsLink:focus-visible {
+  outline: 3px solid var(--magenta);
+  outline-offset: 2px;
+}
+
 .sections {
   display: flex;
   flex-direction: column;

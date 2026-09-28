@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { fetchHome, type HomeSection, type Movie } from '../../api/catalogue';
+import { Link, useNavigate } from 'react-router-dom';
+import { fetchHome, fetchMyPlaylists, type HomeSection, type Movie, type Playlist } from '../../api/catalogue';
 import { HomeSection as HomeSectionBlock } from '../../components/HomeSection/HomeSection';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStarred } from '../../contexts/StarredContext';
@@ -18,6 +18,7 @@ export function HomePage() {
   const { isStarred, toggleStarred } = useStarred();
   const showPlaylistStar = authState.status === 'signed-in';
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const [myPlaylists, setMyPlaylists] = useState<Playlist[]>([]);
 
   // Home is public: load sections immediately, without waiting for sign-in.
   useEffect(() => {
@@ -39,6 +40,24 @@ export function HomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (authState.status !== 'signed-in') {
+      setMyPlaylists([]);
+      return;
+    }
+    let active = true;
+    fetchMyPlaylists()
+      .then((playlists) => {
+        if (active) setMyPlaylists(playlists);
+      })
+      .catch(() => {
+        if (active) setMyPlaylists([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authState.status]);
+
   const openMovie = (movie: Movie) => navigate(`/movies/${movie.tmdbId}`);
 
   return (
@@ -58,6 +77,24 @@ export function HomePage() {
         <p className={page.error} role="alert">
           Could not load home: {state.message}. Is the backend running on port 8080?
         </p>
+      )}
+
+      {authState.status === 'signed-in' && myPlaylists.length > 0 && (
+        <section className={homeStyles.myPlaylists} aria-labelledby="home-my-playlists">
+          <h2 className={homeStyles.myPlaylistsHeading} id="home-my-playlists">
+            Your playlists
+          </h2>
+          <ul className={homeStyles.myPlaylistsList}>
+            {myPlaylists.slice(0, 4).map((playlist) => (
+              <li key={playlist.id} className={homeStyles.myPlaylistItem}>
+                <strong>{playlist.name}</strong> · {playlist.filmCount} films
+              </li>
+            ))}
+          </ul>
+          <Link className={homeStyles.myPlaylistsLink} to="/playlists">
+            Manage playlists
+          </Link>
+        </section>
       )}
 
       {state.status === 'loaded' && (

@@ -1,7 +1,7 @@
 import { apiFetch, ensureCsrfCookie } from './client';
-import type { HomeSection, Movie, MovieDetail, Playlist } from '../types/catalogue';
+import type { HomeSection, Movie, MovieDetail, Playlist, PlaylistCompare } from '../types/catalogue';
 
-export type { HomeSection, Movie, MovieDetail, Playlist } from '../types/catalogue';
+export type { HomeSection, Movie, MovieDetail, Playlist, PlaylistCompare } from '../types/catalogue';
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await apiFetch(path);
@@ -16,6 +16,14 @@ export const fetchMovies = () => getJson<Movie[]>('/api/movies');
 export const fetchMovie = (tmdbId: number) => getJson<MovieDetail>(`/api/movies/${tmdbId}`);
 export const fetchPlaylists = () => getJson<Playlist[]>('/api/playlists');
 export const fetchMyPlaylists = () => getJson<Playlist[]>('/api/me/playlists');
+
+export const fetchPlaylistCompare = (leftId: number, rightId: number) =>
+  getJson<PlaylistCompare>(`/api/playlists/compare?left=${leftId}&right=${rightId}`);
+
+export const fetchStarredIds = () => getJson<{ tmdbIds: number[] }>('/api/me/starred');
+
+export const fetchMyRating = (tmdbId: number) =>
+  getJson<{ tmdbId: number; stars: number | null }>(`/api/me/ratings/${tmdbId}`);
 
 export async function createPlaylist(name: string): Promise<Playlist> {
   await ensureCsrfCookie();
@@ -42,4 +50,31 @@ export async function renamePlaylist(id: number, name: string): Promise<Playlist
     throw new Error('Could not rename playlist');
   }
   return (await response.json()) as Playlist;
+}
+
+export async function starFilm(tmdbId: number): Promise<void> {
+  await ensureCsrfCookie();
+  const response = await apiFetch(`/api/me/starred/${tmdbId}`, { method: 'POST' });
+  if (!response.ok) {
+    throw new Error('Could not add to starred list');
+  }
+}
+
+export async function unstarFilm(tmdbId: number): Promise<void> {
+  await ensureCsrfCookie();
+  const response = await apiFetch(`/api/me/starred/${tmdbId}`, { method: 'DELETE' });
+  if (!response.ok) {
+    throw new Error('Could not remove from starred list');
+  }
+}
+
+export async function saveMyRating(tmdbId: number, stars: number): Promise<void> {
+  await ensureCsrfCookie();
+  const response = await apiFetch(`/api/me/ratings/${tmdbId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ stars }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save rating');
+  }
 }

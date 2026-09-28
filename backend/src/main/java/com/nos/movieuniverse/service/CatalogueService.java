@@ -2,21 +2,32 @@ package com.nos.movieuniverse.service;
 
 import com.nos.movieuniverse.dto.MovieDetailResponse;
 import com.nos.movieuniverse.dto.MovieResponse;
+import com.nos.movieuniverse.dto.PlaylistCompareResponse;
 import com.nos.movieuniverse.dto.PlaylistResponse;
+import com.nos.movieuniverse.dto.StarredIdsResponse;
+import com.nos.movieuniverse.dto.UserRatingResponse;
 import com.nos.movieuniverse.model.Movie;
 import com.nos.movieuniverse.model.Playlist;
+import com.nos.movieuniverse.model.PlaylistItem;
 import com.nos.movieuniverse.model.AppUser;
+import com.nos.movieuniverse.model.UserRating;
 import com.nos.movieuniverse.repository.AppUserRepository;
 import com.nos.movieuniverse.repository.MovieRepository;
+import com.nos.movieuniverse.repository.PlaylistItemRepository;
 import com.nos.movieuniverse.repository.PlaylistRepository;
 import com.nos.movieuniverse.repository.UserRatingRepository;
 import com.nos.movieuniverse.tmdb.MovieEnricher;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +37,11 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional(readOnly = true)
 public class CatalogueService {
 
+    private static final String STARRED_PLAYLIST_NAME = "Starred picks";
+
     private final MovieRepository movieRepository;
     private final PlaylistRepository playlistRepository;
+    private final PlaylistItemRepository playlistItemRepository;
     private final UserRatingRepository userRatingRepository;
     private final AppUserRepository appUserRepository;
     private final MovieCatalogueMapper mapper;
@@ -36,12 +50,14 @@ public class CatalogueService {
     public CatalogueService(
             MovieRepository movieRepository,
             PlaylistRepository playlistRepository,
+            PlaylistItemRepository playlistItemRepository,
             UserRatingRepository userRatingRepository,
             AppUserRepository appUserRepository,
             MovieCatalogueMapper mapper,
             MovieEnricher movieEnricher) {
         this.movieRepository = movieRepository;
         this.playlistRepository = playlistRepository;
+        this.playlistItemRepository = playlistItemRepository;
         this.userRatingRepository = userRatingRepository;
         this.appUserRepository = appUserRepository;
         this.mapper = mapper;
@@ -121,16 +137,142 @@ public class CatalogueService {
         return toResponse(playlist, loadLocalRatings());
     }
 
+    public PlaylistCompareResponse comparePlaylists(long leftId, long rightId) {
+        Playlist left = playlistRepository
+                .findByIdAndDeletedAtIsNull(leftId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Left playlist not found"));
+        Playlist right = playlistRepository
+                .findByIdAndDeletedAtIsNull(rightId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Right playlist not found"));
+
+        Map<Long, LocalRating> localRatings = loadLocalRatings();
+        List<MovieResponse> leftFilms = filmsForPlaylist(left.getId(), localRatings);
+        List<MovieResponse> rightFilms = filmsForPlaylist(right.getId(), localRatings);
+
+        AverageScore leftAvg = averageCombined(leftFilms);
+        AverageScore rightAvg = averageCombined(rightFilms);
+
+        Set<Long> rightIds =
+                rightFilms.stream().map(MovieResponse::tmdbId).collect(Collectors.toCollection(HashSet::new));
+        Set<Long> seenCommon = new HashSet<>();
+        List<MovieResponse> common = new ArrayList<>();
+        for (MovieResponse film : leftFilms) {
+            if (rightIds.contains(film.tmdbId()) && seenCommon.add(film.tmdbId())) {
+                common.add(film);
+            }
+        }
+
+        String winner = resolveWinner(leftAvg.average(), rightAvg.average());
+
+        return new PlaylistCompareResponse(
+                new PlaylistCompareResponse.CompareSide(
+                        left.getId(),
+                        left.getName(),
+                        left.getOwner().getUsername(),
+                        leftFilms.size(),
+                        leftAvg.average(),
+                        leftAvg.scorableCount()),
+                new PlaylistCompareResponse.CompareSide(
+                        right.getId(),
+                        right.getName(),
+                        right.getOwner().getUsername(),
+                        rightFilms.size(),
+                        rightAvg.average(),
+                        rightAvg.scorableCount()),
+                winner,
+                common.size(),
+                common);
+    }
+
+    public StarredIdsResponse findStarredTmdbIds(String username) {
+        AppUser user = requireUser(username);
+        Optional<Playlist> starred = findStarredPlaylist(user);
+        if (starred.isEmpty()) {
+            return new StarredIdsResponse(List.of());
+        }
+        long playlistId = starred.get().getId();
+        List<Long> ids = playlistItemRepository.findByPlaylistIdOrderByPositionAsc(playlistId).stream()
+                .map(item -> item.getMovie().getTmdbId())
+                .distinct()
+                .toList();
+        return new StarredIdsResponse(ids);
+    }
+
+    @Transactional
+    public void addStarredFilm(String username, long tmdbId) {
+        AppUser user = requireUser(username);
+        Movie movie = movieRepository
+                .findById(tmdbId)
+                .orElseGet(() -> movieRepository.save(new Movie(tmdbId)));
+        Playlist starred = ensureStarredPlaylist(user);
+        boolean alreadyListed = starred.getItems().stream()
+                .anyMatch(item -> item.getMovie().getTmdbId() == tmdbId);
+        if (alreadyListed) {
+            return;
+        }
+        int nextPosition = starred.getItems().stream()
+                        .mapToInt(PlaylistItem::getPosition)
+                        .max()
+                        .orElse(0)
+                + 1;
+        playlistItemRepository.save(new PlaylistItem(starred, movie, nextPosition));
+    }
+
+    @Transactional
+    public void removeStarredFilm(String username, long tmdbId) {
+        AppUser user = requireUser(username);
+        findStarredPlaylist(user).ifPresent(starred -> {
+            List<PlaylistItem> matches = playlistItemRepository.findByPlaylistIdAndMovieTmdbId(starred.getId(), tmdbId);
+            playlistItemRepository.deleteAll(matches);
+        });
+    }
+
+    public UserRatingResponse findMyRating(String username, long tmdbId) {
+        AppUser user = requireUser(username);
+        return userRatingRepository
+                .findByUserIdAndMovieTmdbId(user.getId(), tmdbId)
+                .map(rating -> new UserRatingResponse(tmdbId, (int) rating.getStars()))
+                .orElse(new UserRatingResponse(tmdbId, null));
+    }
+
+    @Transactional
+    public UserRatingResponse upsertMyRating(String username, long tmdbId, short stars) {
+        if (stars < 1 || stars > 10) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rating must be between 1 and 10");
+        }
+        AppUser user = requireUser(username);
+        Movie movie = movieRepository
+                .findById(tmdbId)
+                .orElseGet(() -> movieRepository.save(new Movie(tmdbId)));
+
+        UserRating rating = userRatingRepository
+                .findByUserIdAndMovieTmdbId(user.getId(), tmdbId)
+                .orElseGet(() -> new UserRating(user, movie, stars, LocalDate.now()));
+        rating.setStars(stars);
+        rating.setRatedAt(LocalDate.now());
+        userRatingRepository.save(rating);
+        return new UserRatingResponse(tmdbId, (int) stars);
+    }
+
     private AppUser requireUser(String username) {
         return appUserRepository
                 .findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
-    private PlaylistResponse toResponse(Playlist playlist, Map<Long, LocalRating> localRatings) {
-        List<MovieResponse> films = playlist.getItems().stream()
-                .map(item -> toSummary(item.getMovie(), localRatings))
+    private List<MovieResponse> filmsForPlaylist(long playlistId, Map<Long, LocalRating> localRatings) {
+        return playlistItemRepository.findByPlaylistIdOrderByPositionAsc(playlistId).stream()
+                .map(item -> {
+                    Movie movie = movieRepository
+                            .findById(item.getMovie().getTmdbId())
+                            .orElse(item.getMovie());
+                    return toSummary(movie, localRatings);
+                })
                 .toList();
+    }
+
+    private PlaylistResponse toResponse(Playlist playlist, Map<Long, LocalRating> localRatings) {
+        List<MovieResponse> films = filmsForPlaylist(playlist.getId(), localRatings);
 
         return new PlaylistResponse(
                 playlist.getId(),
@@ -163,7 +305,62 @@ public class CatalogueService {
                 .compareTo(Optional.ofNullable(left.combinedRating()).orElse(BigDecimal.valueOf(-1)));
     }
 
+    private Playlist ensureStarredPlaylist(AppUser user) {
+        return findStarredPlaylist(user)
+                .orElseGet(() -> {
+                    Playlist playlist = new Playlist(STARRED_PLAYLIST_NAME, user);
+                    playlist.setExternalId(starredExternalId(user.getUsername()));
+                    return playlistRepository.save(playlist);
+                });
+    }
+
+    private Optional<Playlist> findStarredPlaylist(AppUser user) {
+        return playlistRepository.findByOwnerIdAndExternalIdAndDeletedAtIsNull(
+                user.getId(), starredExternalId(user.getUsername()));
+    }
+
+    private static String starredExternalId(String username) {
+        return "starred-" + username;
+    }
+
+    private static AverageScore averageCombined(List<MovieResponse> films) {
+        BigDecimal sum = BigDecimal.ZERO;
+        int count = 0;
+        for (MovieResponse film : films) {
+            if (film.combinedRating() != null) {
+                sum = sum.add(film.combinedRating());
+                count++;
+            }
+        }
+        if (count == 0) {
+            return new AverageScore(null, 0);
+        }
+        return new AverageScore(sum.divide(BigDecimal.valueOf(count), 3, RoundingMode.HALF_UP), count);
+    }
+
+    private static String resolveWinner(BigDecimal left, BigDecimal right) {
+        if (left == null && right == null) {
+            return "insufficient";
+        }
+        if (left == null) {
+            return "right";
+        }
+        if (right == null) {
+            return "left";
+        }
+        int cmp = left.compareTo(right);
+        if (cmp > 0) {
+            return "left";
+        }
+        if (cmp < 0) {
+            return "right";
+        }
+        return "tie";
+    }
+
     private record LocalRating(long voteCount, BigDecimal average) {
         private static final LocalRating NONE = new LocalRating(0, null);
     }
+
+    private record AverageScore(BigDecimal average, int scorableCount) {}
 }

@@ -5,7 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.nos.movieuniverse.service.CatalogueService;
 import com.nos.movieuniverse.model.AppUser;
+import com.nos.movieuniverse.model.Movie;
+import com.nos.movieuniverse.model.Playlist;
+import com.nos.movieuniverse.model.PlaylistItem;
 import com.nos.movieuniverse.repository.AppUserRepository;
+import com.nos.movieuniverse.repository.MovieRepository;
+import com.nos.movieuniverse.repository.PlaylistItemRepository;
+import com.nos.movieuniverse.repository.PlaylistRepository;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +44,15 @@ class CatalogueServicePlaylistMutationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MovieRepository movieRepository;
+
+    @Autowired
+    private PlaylistRepository playlistRepository;
+
+    @Autowired
+    private PlaylistItemRepository playlistItemRepository;
 
     @BeforeEach
     void seedUsers() {
@@ -69,5 +86,54 @@ class CatalogueServicePlaylistMutationTest {
                 () -> catalogueService.renamePlaylist("owner-b", created.id(), "Taken"));
 
         assertThat(error.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void starAddAndRemovePersistsInDatabase() {
+        movieRepository.save(new Movie(999_001L));
+
+        catalogueService.addStarredFilm("owner-a", 999_001L);
+        assertThat(catalogueService.findStarredTmdbIds("owner-a").tmdbIds()).containsExactly(999_001L);
+
+        catalogueService.removeStarredFilm("owner-a", 999_001L);
+        assertThat(catalogueService.findStarredTmdbIds("owner-a").tmdbIds()).isEmpty();
+    }
+
+    @Test
+    void userCanUpsertRating() {
+        movieRepository.save(new Movie(999_002L));
+
+        var first = catalogueService.upsertMyRating("owner-a", 999_002L, (short) 8);
+        assertThat(first.stars()).isEqualTo(8);
+
+        var updated = catalogueService.upsertMyRating("owner-a", 999_002L, (short) 10);
+        assertThat(updated.stars()).isEqualTo(10);
+        assertThat(catalogueService.findMyRating("owner-a", 999_002L).stars()).isEqualTo(10);
+    }
+
+    @Test
+    void comparePlaylistsPicksHigherAverageCombinedRating() {
+        Movie popular = movieRepository.save(stubMovie(100L, new BigDecimal("8.4"), 30_000));
+        Movie obscure = movieRepository.save(stubMovie(200L, new BigDecimal("8.9"), 12));
+
+        var leftDto = catalogueService.createPlaylist("owner-a", "Blockbusters");
+        var rightDto = catalogueService.createPlaylist("owner-a", "Niche");
+
+        Playlist left = playlistRepository.findById(leftDto.id()).orElseThrow();
+        Playlist right = playlistRepository.findById(rightDto.id()).orElseThrow();
+        playlistItemRepository.save(new PlaylistItem(left, popular, 1));
+        playlistItemRepository.save(new PlaylistItem(right, obscure, 1));
+
+        var compare = catalogueService.comparePlaylists(leftDto.id(), rightDto.id());
+        assertThat(compare.winner()).isEqualTo("left");
+        assertThat(compare.left().averageCombinedRating()).isGreaterThan(compare.right().averageCombinedRating());
+    }
+
+    private static Movie stubMovie(long id, BigDecimal avg, int votes) {
+        Movie movie = new Movie(id);
+        movie.setTitle("Film " + id);
+        movie.setVotes(votes, avg);
+        movie.setFetchedAt(OffsetDateTime.now());
+        return movie;
     }
 }

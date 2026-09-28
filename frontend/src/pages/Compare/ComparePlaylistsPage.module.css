@@ -1,0 +1,104 @@
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  font-weight: 700;
+  gap: var(--space-1);
+  min-width: 14rem;
+}
+
+.select {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font: inherit;
+  padding: var(--space-2);
+}
+
+.select:focus-visible {
+  outline: 3px solid var(--magenta);
+  outline-offset: 2px;
+}
+
+.compareButton {
+  align-self: flex-end;
+  background-color: var(--teal);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  color: var(--white);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: var(--space-2) var(--space-4);
+  text-transform: uppercase;
+}
+
+.compareButton:focus-visible {
+  outline: 3px solid var(--magenta);
+  outline-offset: 2px;
+}
+
+.compareButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.result {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+}
+
+.resultHeading {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: var(--space-3);
+}
+
+.sideGrid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.sideCard {
+  background-color: var(--teal-tint);
+  border: 3px solid var(--ink);
+  padding: var(--space-3);
+}
+
+.sideName {
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.sideMeta {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: var(--space-1);
+}
+
+.winnerBadge {
+  background-color: var(--magenta-tint);
+  border: 3px solid var(--ink);
+  display: inline-block;
+  font-weight: 800;
+  margin-top: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+}
+
+.commonHeading {
+  font-size: 1.125rem;
+  font-weight: 800;
+  margin-bottom: var(--space-2);
+  margin-top: var(--space-4);
+}

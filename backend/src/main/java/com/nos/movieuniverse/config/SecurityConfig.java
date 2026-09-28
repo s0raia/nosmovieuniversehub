@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/home", "/api/movies", "/api/movies/**")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/playlists")
+                        .requestMatchers(HttpMethod.GET, "/api/playlists", "/api/playlists/compare")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/csrf")
                         .permitAll()

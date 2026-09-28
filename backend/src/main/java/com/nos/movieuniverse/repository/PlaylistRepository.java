@@ -20,4 +20,6 @@ public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
     Optional<Playlist> findByIdAndDeletedAtIsNull(Long id);
 
     List<Playlist> findByDeletedAtIsNull();
+
+    Optional<Playlist> findByOwnerIdAndExternalIdAndDeletedAtIsNull(Long ownerId, String externalId);
 }
