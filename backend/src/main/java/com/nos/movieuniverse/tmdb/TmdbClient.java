@@ -1,6 +1,8 @@
 package com.nos.movieuniverse.tmdb;
 
 import com.nos.movieuniverse.tmdb.dto.TmdbMovie;
+import com.nos.movieuniverse.tmdb.dto.TmdbTrendingResponse;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +73,34 @@ public class TmdbClient {
             // line, and anything more detailed risks putting the token in a log.
             log.warn("Could not fetch film {} from TMDB: {}", tmdbId, e.getClass().getSimpleName());
             return Optional.empty();
+        }
+    }
+
+    /** TMDB trending movies this week (global list, not limited to the seed catalogue). */
+    public List<Long> fetchTrendingMovieIds(int limit) {
+        if (!properties.isConfigured()) {
+            return List.of();
+        }
+        try {
+            TmdbTrendingResponse body = restClient
+                    .get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/trending/movie/week")
+                            .queryParam("language", properties.language())
+                            .build())
+                    .retrieve()
+                    .body(TmdbTrendingResponse.class);
+            if (body == null || body.results() == null) {
+                return List.of();
+            }
+            return body.results().stream()
+                    .map(TmdbTrendingResponse.TmdbTrendingItem::id)
+                    .filter(id -> id != null)
+                    .limit(limit)
+                    .toList();
+        } catch (RestClientException e) {
+            log.warn("Could not fetch TMDB trending list: {}", e.getClass().getSimpleName());
+            return List.of();
         }
     }
 
