@@ -41,8 +41,14 @@ data/        seed_playlists.json (provided, unmodified)
 
 - Flyway schema, seed import (idempotent), TMDB enrichment of film stubs
 - Combined rating calculator (feature merged via PR)
-- Read-only catalogue API and frontend grid with real posters and ratings
-- Session login and extended mock users: planned — see [docs/BLOCK_D.md](docs/BLOCK_D.md)
+- **Home** with curated sections (trending this week, most rewatched in playlists, top combined, blockbusters)
+- **Film detail** page (`/movies/{tmdbId}`) with overview, genres, runtime, and ratings
+- Catalogue grid, session **register / login / logout**, and **your playlists** when signed in
+- On first boot after seed, **17 mock users** (`mock-01` … `mock-17`) and themed playlists from `data/mock_extra.json` (skipped if `mock-01` already exists)
+
+Demo accounts: seed users `ana`, `bruno`, `carla`, or any `mock-NN` user — password from `SEED_DEFAULT_PASSWORD`, or **`movieuniverse`** when that variable is empty.
+
+To re-import mock data on an existing database: `cd backend && ./mvnw spring-boot:run -Dspring-boot.run.arguments=--import=classpath:data/mock_extra.json`
 
 ## Database notes
 

@@ -1,0 +1,37 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.playlistCard {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  padding: var(--space-4);
+}
+
+.playlistHeader {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+
+.playlistName {
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.playlistMeta {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.films {
+  margin-top: var(--space-4);
+}
