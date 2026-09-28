@@ -3,41 +3,57 @@ package com.nos.movieuniverse.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
-/**
- * Security beans.
- *
- * <p>The catalogue is public because it is: film data from TMDB, and playlists
- * the seed already publishes. Everything else stays locked behind the defaults.
- * Login, sessions and the rules guarding writes arrive with the auth work, at
- * which point the blanket permit on {@code GET /api/**} narrows to the
- * endpoints that really are anonymous.
- */
 @Configuration
 public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http.authorizeHttpRequests(requests -> requests
-                        .requestMatchers(HttpMethod.GET, "/api/**")
+        CookieCsrfTokenRepository csrf = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrf.setCookieName("XSRF-TOKEN");
+
+        return http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .csrf(c -> c.csrfTokenRepository(csrf))
+                .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/actuator/health")
                         .permitAll()
-                        .requestMatchers("/actuator/health")
+                        .requestMatchers(HttpMethod.GET, "/api/home", "/api/movies", "/api/movies/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/playlists")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/logout")
+                        .permitAll()
+                        .requestMatchers("/api/me/**")
+                        .authenticated()
                         .anyRequest()
                         .authenticated())
-                .httpBasic(basic -> {})
-                // Safe while the API is read-only. This has to come back, scoped to
-                // the write endpoints, as soon as anything accepts a POST.
-                .csrf(csrf -> csrf.disable())
+                .httpBasic(basic -> basic.disable())
+                .formLogin(form -> form.disable())
                 .build();
+    }
+
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    HttpSessionSecurityContextRepository securityContextRepository() {
+        return new HttpSessionSecurityContextRepository();
     }
 }
