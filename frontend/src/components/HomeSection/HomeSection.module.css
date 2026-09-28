@@ -1,0 +1,30 @@
+.section {
+  margin: 0;
+  padding-bottom: var(--space-2);
+}
+
+.section:not(:last-child) {
+  border-bottom: var(--border-width) solid var(--ink);
+  padding-bottom: var(--space-5);
+}
+
+.heading {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+}
+
+.subheading {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.empty {
+  color: var(--text-muted);
+  font-style: italic;
+}

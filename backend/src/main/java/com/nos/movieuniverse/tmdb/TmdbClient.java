@@ -1,6 +1,9 @@
 package com.nos.movieuniverse.tmdb;
 
 import com.nos.movieuniverse.tmdb.dto.TmdbMovie;
+import com.nos.movieuniverse.tmdb.dto.TmdbTrendingResponse;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +74,62 @@ public class TmdbClient {
             // line, and anything more detailed risks putting the token in a log.
             log.warn("Could not fetch film {} from TMDB: {}", tmdbId, e.getClass().getSimpleName());
             return Optional.empty();
+        }
+    }
+
+    /** TMDB trending movies this week (global list, not limited to the seed catalogue). */
+    public List<Long> fetchTrendingMovieIds(int limit) {
+        return fetchResultIds("/trending/movie/week", limit, uriBuilder -> uriBuilder
+                .queryParam("language", properties.language()));
+    }
+
+    /** Films with a primary release date in the last six months, newest first. */
+    public List<Long> fetchLatestReleaseMovieIds(int limit) {
+        LocalDate today = LocalDate.now();
+        LocalDate sixMonthsAgo = today.minusMonths(6);
+        return fetchResultIds("/discover/movie", limit, uriBuilder -> uriBuilder
+                .queryParam("language", properties.language())
+                .queryParam("sort_by", "release_date.desc")
+                .queryParam("primary_release_date.gte", sixMonthsAgo.toString())
+                .queryParam("primary_release_date.lte", today.toString())
+                .queryParam("include_adult", false));
+    }
+
+    /** Upcoming wide releases from TMDB. */
+    public List<Long> fetchUpcomingMovieIds(int limit) {
+        return fetchResultIds("/movie/upcoming", limit, uriBuilder -> uriBuilder
+                .queryParam("language", properties.language())
+                .queryParam("region", "US"));
+    }
+
+    private List<Long> fetchResultIds(
+            String path, int limit, java.util.function.Consumer<
+                            org.springframework.web.util.UriBuilder>
+                    extraParams) {
+        if (!properties.isConfigured()) {
+            return List.of();
+        }
+        try {
+            TmdbTrendingResponse body = restClient
+                    .get()
+                    .uri(uriBuilder -> {
+                        var builder = uriBuilder.path(path);
+                        extraParams.accept(builder);
+                        return builder.build();
+                    })
+                    .retrieve()
+                    .body(TmdbTrendingResponse.class);
+            if (body == null || body.results() == null) {
+                return List.of();
+            }
+            return body.results().stream()
+                    .map(TmdbTrendingResponse.TmdbTrendingItem::id)
+                    .filter(id -> id != null)
+                    .limit(limit)
+                    .toList();
+        } catch (RestClientException e) {
+            log.warn("Could not fetch TMDB list at {}: {}", path, e.getClass().getSimpleName());
+            return List.of();
         }
     }
 

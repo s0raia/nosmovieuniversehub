@@ -1,0 +1,50 @@
+package com.nos.movieuniverse.controller;
+
+import com.nos.movieuniverse.dto.CreatePlaylistRequest;
+import com.nos.movieuniverse.dto.PlaylistResponse;
+import com.nos.movieuniverse.dto.UpdatePlaylistRequest;
+import com.nos.movieuniverse.service.CatalogueService;
+import jakarta.validation.Valid;
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/me")
+public class MeController {
+
+    private final CatalogueService catalogueService;
+
+    public MeController(CatalogueService catalogueService) {
+        this.catalogueService = catalogueService;
+    }
+
+    @GetMapping("/playlists")
+    public List<PlaylistResponse> myPlaylists(@AuthenticationPrincipal UserDetails user) {
+        return catalogueService.findPlaylistsForUser(user.getUsername());
+    }
+
+    @PostMapping("/playlists")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PlaylistResponse createPlaylist(
+            @AuthenticationPrincipal UserDetails user, @Valid @RequestBody CreatePlaylistRequest request) {
+        return catalogueService.createPlaylist(user.getUsername(), request.name());
+    }
+
+    @PatchMapping("/playlists/{id}")
+    public PlaylistResponse renamePlaylist(
+            @AuthenticationPrincipal UserDetails user,
+            @PathVariable long id,
+            @Valid @RequestBody UpdatePlaylistRequest request) {
+        return catalogueService.renamePlaylist(user.getUsername(), id, request.name());
+    }
+}

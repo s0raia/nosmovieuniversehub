@@ -7,6 +7,33 @@
   position: relative;
 }
 
+.cardInteractive {
+  padding: 0;
+}
+
+.openButton {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.openButton:hover .title {
+  color: var(--teal);
+  text-decoration: underline;
+}
+
+.openButton:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
 .poster {
   aspect-ratio: 2 / 3;
   background-color: var(--teal-tint);

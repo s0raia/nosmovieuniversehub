@@ -1,6 +1,6 @@
 package com.nos.movieuniverse.repository;
 
-import com.nos.movieuniverse.domain.AppUser;
+import com.nos.movieuniverse.model.AppUser;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 

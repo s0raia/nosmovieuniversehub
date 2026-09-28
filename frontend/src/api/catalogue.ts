@@ -1,46 +1,45 @@
-/*
-  Calls go to /api, which Vite proxies to the backend in development and nginx
-  proxies in the container. The browser therefore only ever sees one origin, so
-  there is no CORS handling here and none on the server.
-*/
+import { apiFetch, ensureCsrfCookie } from './client';
+import type { HomeSection, Movie, MovieDetail, Playlist } from '../types/catalogue';
 
-/**
- * A film as the backend returns it.
- *
- * Every rating field is nullable, and null means "no information", never zero.
- * A film TMDB holds no votes for has a null average, and showing that as 0
- * would be wrong: 0 is a real and very bad score.
- */
-export type Movie = {
-  tmdbId: number;
-  title: string | null;
-  releaseYear: number | null;
-  posterUrl: string | null;
-  overview: string | null;
-  tmdbVoteAverage: number | null;
-  tmdbVoteCount: number;
-  localVoteAverage: number | null;
-  localVoteCount: number;
-  combinedRating: number | null;
-};
-
-export type Playlist = {
-  id: number;
-  externalId: string | null;
-  name: string;
-  owner: string;
-  filmCount: number;
-  films: Movie[];
-};
+export type { HomeSection, Movie, MovieDetail, Playlist } from '../types/catalogue';
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(path, { headers: { Accept: 'application/json' } });
+  const response = await apiFetch(path);
   if (!response.ok) {
     throw new Error(`${path} responded ${response.status}`);
   }
   return (await response.json()) as T;
 }
 
+export const fetchHome = () => getJson<HomeSection[]>('/api/home');
 export const fetchMovies = () => getJson<Movie[]>('/api/movies');
-
+export const fetchMovie = (tmdbId: number) => getJson<MovieDetail>(`/api/movies/${tmdbId}`);
 export const fetchPlaylists = () => getJson<Playlist[]>('/api/playlists');
+export const fetchMyPlaylists = () => getJson<Playlist[]>('/api/me/playlists');
+
+export async function createPlaylist(name: string): Promise<Playlist> {
+  await ensureCsrfCookie();
+  const response = await apiFetch('/api/me/playlists', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not create playlist');
+  }
+  return (await response.json()) as Playlist;
+}
+
+export async function renamePlaylist(id: number, name: string): Promise<Playlist> {
+  await ensureCsrfCookie();
+  const response = await apiFetch(`/api/me/playlists/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name }),
+  });
+  if (response.status === 403) {
+    throw new Error('You cannot rename this playlist');
+  }
+  if (!response.ok) {
+    throw new Error('Could not rename playlist');
+  }
+  return (await response.json()) as Playlist;
+}

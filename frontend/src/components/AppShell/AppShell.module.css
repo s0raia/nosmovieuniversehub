@@ -19,11 +19,50 @@
   max-width: 1200px;
 }
 
+.wordmarkLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.wordmarkLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
 .wordmark {
   font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.userBadge {
+  align-self: center;
+  border: var(--border-width) solid var(--white);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: var(--space-1) var(--space-2);
+  text-transform: none;
+}
+
+.navButton {
+  background-color: transparent;
+  border: var(--border-width) solid var(--white);
+  color: var(--white);
+  cursor: pointer;
+  font-weight: 700;
+  padding: var(--space-1) var(--space-3);
+  text-transform: uppercase;
+}
+
+.navButton:hover {
+  background-color: var(--white);
+  color: var(--teal);
+}
+
+.navButton:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 .nav {

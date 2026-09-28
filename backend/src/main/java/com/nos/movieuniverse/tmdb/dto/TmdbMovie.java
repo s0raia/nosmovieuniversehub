@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The subset of TMDB's movie payload this application stores. TMDB sends a good
@@ -27,10 +29,13 @@ public record TmdbMovie(
         @JsonProperty("runtime") Integer runtime,
         @JsonProperty("vote_average") BigDecimal voteAverage,
         @JsonProperty("vote_count") Integer voteCount,
-        @JsonProperty("genres") List<TmdbGenre> genres) {
+        @JsonProperty("genres") List<TmdbGenre> genres,
+        @JsonProperty("original_language") String originalLanguage,
+        @JsonProperty("spoken_languages") List<TmdbSpokenLanguage> spokenLanguages) {
 
     public TmdbMovie {
         genres = genres == null ? List.of() : List.copyOf(genres);
+        spokenLanguages = spokenLanguages == null ? List.of() : List.copyOf(spokenLanguages);
     }
 
     /**
@@ -56,5 +61,17 @@ public record TmdbMovie(
         } catch (DateTimeParseException e) {
             return null;
         }
+    }
+
+    /** English labels from TMDB, sorted for stable display. */
+    public List<String> spokenLanguageEnglishNames() {
+        return spokenLanguages.stream()
+                .map(TmdbSpokenLanguage::englishName)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .toList();
     }
 }

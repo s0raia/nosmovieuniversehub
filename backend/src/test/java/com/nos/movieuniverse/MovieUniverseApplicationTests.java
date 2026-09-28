@@ -17,6 +17,8 @@ import org.springframework.context.annotation.Import;
 @SpringBootTest(
 		properties = {
 			"app.seed.auto-on-empty=false",
+			"app.seed.import-mock-when-missing=false",
+			"app.tmdb.backfill-missing-genres=false",
 			"tmdb.enrich-stubs-on-startup=false",
 			"tmdb.read-access-token=not-used-in-this-test"
 		})

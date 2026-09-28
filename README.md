@@ -1,9 +1,10 @@
 # MovieUniverse Hub
 
-A web app that searches films through the TMDB API, lets users build personal
-playlists and rate films, and computes a **combined rating** that weighs TMDB's
-average against ratings from this app's own users. Backend: Spring Boot.
-Frontend: React. Database: PostgreSQL.
+A web app built for a practical exercise in the **Specialisterne** program: browse films via the [TMDB API](https://www.themoviedb.org/), manage personal playlists, rate titles, and view a **combined rating** (TMDB average plus this app’s user ratings). Backend: Spring Boot. Frontend: React. Database: PostgreSQL.
+
+## Context
+
+This repository is my submission for that exercise. [`data/seed_playlists.json`](data/seed_playlists.json) is the provided seed file and is **not modified**; extra demo users and playlists are in [`data/mock_extra.json`](data/mock_extra.json). The exercise allows AI assistance; I used **Cursor (Composer 2.5)** to help plan and implement parts of the work. The UI and docs use a mix of British and American English in places.
 
 ## Quick start
 
@@ -13,48 +14,52 @@ Frontend: React. Database: PostgreSQL.
 4. `cd frontend && npm install && npm run dev`
 5. Open http://localhost:5173
 
-**TMDB:** This product uses the [TMDB API](https://www.themoviedb.org/) but is
-not endorsed or certified by TMDB.
+If port 5432 is busy, set `POSTGRES_PORT` in `.env`. Seeded users (`ana`, `bruno`, `carla`) use `SEED_DEFAULT_PASSWORD`, or **`movieuniverse`** when that variable is empty.
 
-Leave `POSTGRES_USER` / `POSTGRES_PASSWORD` empty to use the defaults. If port
-5432 is taken, uncomment `POSTGRES_PORT` in `.env`. Seeded users (`ana`,
-`bruno`, `carla`) get the password from `SEED_DEFAULT_PASSWORD`, or the
-documented fallback when it is blank.
-
-## Running (full stack)
+## Full stack (optional)
 
 ```bash
 docker compose --profile full up
 ```
 
-Frontend on http://localhost:3000, backend on http://localhost:8080.
+Frontend: http://localhost:3000 · Backend: http://localhost:8080
+
+## Features
+
+- Idempotent seed import, Flyway schema, TMDB enrichment of film stubs
+- Home sections, catalog with filters, film detail (genres, runtime, spoken languages when enriched)
+- Session register / login / logout; create and rename your playlists (any language for names you create)
+- Combined rating calculator; seed playlist titles remain Portuguese from the provided seed file
+- Mock and persona demo accounts loaded from `mock_extra.json` on first boot (or when missing users are detected)
+
+## Demo logins
+
+Use **`movieuniverse`** when `SEED_DEFAULT_PASSWORD` is unset (unless you configured your own). Seed users: `ana`, `bruno`, `carla`. Mock users: `mock-01` … `mock-17` (display names such as Jimmy, Maite, Yuki). Persona demos: `joao`, `sabrina`, `andres`, `soraia` (playlists themed for demos; `soraia` reflects my Trakt movie export). To refresh mock data on an existing DB:
+
+```bash
+cd backend && ./mvnw spring-boot:run -Dspring-boot.run.arguments=--import=classpath:data/mock_extra.json
+```
 
 ## Project layout
 
 ```
-backend/     Spring Boot 4.1.1, Flyway, JPA
-frontend/    React + Vite, CSS Modules
-data/        seed_playlists.json (provided, unmodified)
+backend/   config, controller, dto, model, repository, service, seed, tmdb
+frontend/  api, layouts, pages, types, components, contexts (CSS Modules)
+data/      seed_playlists.json (provided), mock_extra.json (demo extension)
 ```
 
-## What works today
+## Seed data (short)
 
-- Flyway schema, seed import (idempotent), TMDB enrichment of film stubs
-- Combined rating calculator (feature merged via PR)
-- Read-only catalogue API and frontend grid with real posters and ratings
-- Session login and extended mock users: planned — see [docs/BLOCK_D.md](docs/BLOCK_D.md)
-
-## Database notes
-
-The schema follows traps in the provided seed: duplicate film in one playlist,
-soft-deleted playlists, duplicate titles (two *Dune* films), and
-`vote_average` stored as NULL when TMDB has no votes.
-
-## Interface
-
-Neo-brutalist UI (CSS Modules, WCAG AAA palette in `frontend/src/styles/tokens.css`).
+The schema matches deliberate seed traps: duplicate titles, a duplicate row in one playlist, soft-deleted playlists, and TMDB averages stored as `NULL` when there are no votes.
 
 ## Attribution
 
-Film data and posters from TMDB. This product uses the TMDB API but is not
-endorsed or certified by TMDB.
+This product uses the TMDB API but is not endorsed or certified by TMDB. Film metadata and posters © TMDB contributors.
+
+---
+
+> **Thanks for looking!**
+>
+> *- s0raia*
+
+---

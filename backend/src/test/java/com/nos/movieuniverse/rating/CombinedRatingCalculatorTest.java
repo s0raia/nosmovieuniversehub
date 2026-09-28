@@ -1,5 +1,7 @@
 package com.nos.movieuniverse.rating;
 
+import com.nos.movieuniverse.service.rating.CombinedRatingCalculator;
+import com.nos.movieuniverse.service.rating.RatingInput;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

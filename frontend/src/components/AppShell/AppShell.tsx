@@ -1,27 +1,59 @@
 import type { ReactNode } from 'react';
+import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import styles from './AppShell.module.css';
 
 type AppShellProps = {
   children: ReactNode;
 };
 
+function navClass({ isActive }: { isActive: boolean }) {
+  return isActive ? `${styles.navLink} ${styles.navLinkCurrent}` : styles.navLink;
+}
+
 export function AppShell({ children }: AppShellProps) {
+  const { state, logout } = useAuth();
+
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <span className={styles.wordmark}>MovieUniverse Hub</span>
+          <NavLink className={styles.wordmarkLink} to="/">
+            <span className={styles.wordmark}>MovieUniverse Hub</span>
+          </NavLink>
+
           <nav className={styles.nav} aria-label="Main">
-            <a className={`${styles.navLink} ${styles.navLinkCurrent}`} href="/" aria-current="page">
-              Catalogue
-            </a>
-            {/* Full-page hrefs 404 in the Vite SPA until routing exists (Block D). */}
-            <span className={styles.navLinkSoon} title="Coming in Block D">
+            <NavLink className={navClass} to="/" end>
+              Home
+            </NavLink>
+            <NavLink className={navClass} to="/catalogue">
+              Catalog
+            </NavLink>
+            <NavLink className={navClass} to="/playlists">
               Playlists
-            </span>
-            <span className={styles.navLinkSoon} title="Coming in Block D">
-              About
-            </span>
+            </NavLink>
+
+            {state.status === 'signed-in' ? (
+              <>
+                <span
+                  className={styles.userBadge}
+                  aria-label={`Logged in as ${state.displayName ?? state.username}`}
+                >
+                  {state.displayName ?? state.username}
+                </span>
+                <button
+                  type="button"
+                  className={styles.navButton}
+                  onClick={() => void logout()}
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <NavLink className={navClass} to="/account">
+                Log in
+              </NavLink>
+            )}
           </nav>
         </div>
       </header>

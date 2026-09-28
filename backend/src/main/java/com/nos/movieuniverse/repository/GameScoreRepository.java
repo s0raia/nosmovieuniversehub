@@ -1,6 +1,6 @@
 package com.nos.movieuniverse.repository;
 
-import com.nos.movieuniverse.domain.GameScore;
+import com.nos.movieuniverse.model.GameScore;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 

@@ -1,10 +1,10 @@
 package com.nos.movieuniverse.seed;
 
-import com.nos.movieuniverse.domain.AppUser;
-import com.nos.movieuniverse.domain.Movie;
-import com.nos.movieuniverse.domain.Playlist;
-import com.nos.movieuniverse.domain.PlaylistItem;
-import com.nos.movieuniverse.domain.UserRating;
+import com.nos.movieuniverse.model.AppUser;
+import com.nos.movieuniverse.model.Movie;
+import com.nos.movieuniverse.model.Playlist;
+import com.nos.movieuniverse.model.PlaylistItem;
+import com.nos.movieuniverse.model.UserRating;
 import com.nos.movieuniverse.repository.AppUserRepository;
 import com.nos.movieuniverse.repository.MovieRepository;
 import com.nos.movieuniverse.repository.PlaylistItemRepository;
@@ -132,12 +132,33 @@ public class SeedImporter {
                     .findByUsername(seedUser.username())
                     .orElseGet(() -> {
                         counters.usersCreated++;
-                        return userRepository.save(
-                                new AppUser(seedUser.username(), passwordEncoder.encode(rawPassword)));
+                        return userRepository.save(new AppUser(
+                                seedUser.username(),
+                                passwordEncoder.encode(rawPassword),
+                                normalizeDisplayName(seedUser.displayName())));
                     });
+            syncDisplayName(user, seedUser.displayName());
             byName.put(seedUser.username(), user);
         }
         return byName;
+    }
+
+    private static String normalizeDisplayName(String displayName) {
+        if (displayName == null || displayName.isBlank()) {
+            return null;
+        }
+        return displayName.trim();
+    }
+
+    private void syncDisplayName(AppUser user, String displayNameFromSeed) {
+        String normalized = normalizeDisplayName(displayNameFromSeed);
+        if (normalized == null) {
+            return;
+        }
+        if (!normalized.equals(user.getDisplayName())) {
+            user.setDisplayName(normalized);
+            userRepository.save(user);
+        }
     }
 
     private String resolvePassword() {
@@ -184,7 +205,7 @@ public class SeedImporter {
             Playlist playlist;
 
             if (existing.isEmpty()) {
-                playlist = new Playlist(seedPlaylist.name(), requireUser(usersByName, seedPlaylist.ownerUsername()));
+                playlist = new Playlist(seedPlaylist.name(), resolveUser(usersByName, seedPlaylist.ownerUsername()));
                 playlist.setExternalId(seedPlaylist.externalId());
                 applyDeletedFlag(playlist, seedPlaylist.deleted());
                 playlist = playlistRepository.save(playlist);
@@ -243,7 +264,7 @@ public class SeedImporter {
             SeedFile seed, Map<String, AppUser> usersByName, Map<Long, Movie> filmsById, Counters counters) {
 
         for (SeedRating seedRating : seed.ratings()) {
-            AppUser user = requireUser(usersByName, seedRating.username());
+            AppUser user = resolveUser(usersByName, seedRating.username());
             Optional<UserRating> existing =
                     userRatingRepository.findByUserIdAndMovieTmdbId(user.getId(), seedRating.tmdbId());
 
@@ -271,12 +292,20 @@ public class SeedImporter {
         }
     }
 
-    private AppUser requireUser(Map<String, AppUser> usersByName, String username) {
+    /**
+     * Resolves a playlist or rating owner. Supplementary files such as
+     * {@code mock_extra.json} may reference users who were created by an earlier
+     * import, so the lookup falls back to the database.
+     */
+    private AppUser resolveUser(Map<String, AppUser> usersByName, String username) {
         AppUser user = usersByName.get(username);
-        if (user == null) {
-            throw new IllegalStateException(
-                    "Seed file references user \"" + username + "\", who is not in its own user list");
+        if (user != null) {
+            return user;
         }
+        user = userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Seed file references unknown user \"" + username + "\""));
+        usersByName.put(username, user);
         return user;
     }
 
