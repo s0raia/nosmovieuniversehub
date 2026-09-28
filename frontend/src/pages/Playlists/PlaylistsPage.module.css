@@ -36,6 +36,72 @@
   margin-top: var(--space-4);
 }
 
+.entryList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.filmEntry {
+  border-top: 2px solid var(--ink);
+  padding-top: var(--space-3);
+}
+
+.filmCardWrap {
+  max-width: 16rem;
+}
+
+.filmActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.removeButton,
+.moveButton {
+  align-self: flex-start;
+  background-color: var(--paper);
+  border: var(--border-width) solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 700;
+  padding: var(--space-2) var(--space-3);
+}
+
+.removeButton:focus-visible,
+.moveButton:focus-visible,
+.moveSelect:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.moveRow {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.moveLabel {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.875rem;
+  font-weight: 700;
+  gap: var(--space-1);
+}
+
+.moveSelect {
+  background-color: var(--paper);
+  border: var(--border-width) solid var(--ink);
+  font: inherit;
+  min-width: 12rem;
+  padding: var(--space-2);
+}
+
 .createForm {
   background-color: var(--white);
   border: var(--border-width) solid var(--ink);

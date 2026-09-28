@@ -11,6 +11,7 @@ One line per test case. **Pass** unless noted.
 | Import idempotent (users/playlists/items) | Pass — manual re-run `--import=classpath:data/seed_playlists.json` |
 | Search “Dune” shows distinct years / `tmdbId` routes | Pass — manual catalog UI |
 | Star persists in DB (`Starred picks`) | Pass — `CatalogueServicePlaylistMutationTest` + manual |
+| Add/remove/move playlist items (own playlists only) | Pass — `CatalogueServicePlaylistMutationTest` + Playlists UI |
 | User rating 1–10 upsert | Pass — `CatalogueServicePlaylistMutationTest` + detail page |
 | Compare playlists — higher mean combined wins | Pass — `CatalogueServicePlaylistMutationTest` + `/compare` UI |
 | Soft-deleted seed playlists hidden from public list | Pass — manual `/api/playlists` |

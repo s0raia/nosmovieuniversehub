@@ -1,57 +1,27 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  createPlaylist,
-  fetchMyPlaylists,
-  renamePlaylist,
-  type Playlist,
-} from '../../api/catalogue';
+import { createPlaylist, renamePlaylist } from '../../api/catalogue';
 import { FilmGrid } from '../../components/FilmGrid/FilmGrid';
 import { MovieCard } from '../../components/MovieCard/MovieCard';
 import { useAuth } from '../../contexts/AuthContext';
-import { useStarred } from '../../contexts/StarredContext';
+import { useMyPlaylists } from '../../contexts/MyPlaylistsContext';
 import { movieCardProps } from '../../utils/movieCard';
 import page from '../../layouts/Page.module.css';
 import styles from './PlaylistsPage.module.css';
 
-type LoadState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'loaded'; playlists: Playlist[] }
-  | { status: 'failed'; message: string };
-
 export function PlaylistsPage() {
   const { state: authState } = useAuth();
-  const { isStarred, toggleStarred } = useStarred();
+  const { playlists, ready, reload, removeItem, moveItem } = useMyPlaylists();
   const navigate = useNavigate();
-  const [state, setState] = useState<LoadState>({ status: 'idle' });
   const [newName, setNewName] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
-
-  const loadPlaylists = useCallback(async () => {
-    setState({ status: 'loading' });
-    try {
-      const playlists = await fetchMyPlaylists();
-      setState({ status: 'loaded', playlists });
-    } catch (error: unknown) {
-      setState({
-        status: 'failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (authState.status !== 'signed-in') {
-      setState({ status: 'idle' });
-      return;
-    }
-    void loadPlaylists();
-  }, [authState, loadPlaylists]);
+  const [moveTargets, setMoveTargets] = useState<Record<number, string>>({});
+  const [itemError, setItemError] = useState<string | null>(null);
+  const [busyItemId, setBusyItemId] = useState<number | null>(null);
 
   async function onCreate(event: FormEvent) {
     event.preventDefault();
@@ -65,7 +35,7 @@ export function PlaylistsPage() {
     try {
       await createPlaylist(trimmed);
       setNewName('');
-      await loadPlaylists();
+      await reload();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Could not create playlist');
     } finally {
@@ -73,7 +43,7 @@ export function PlaylistsPage() {
     }
   }
 
-  function startRename(playlist: Playlist) {
+  function startRename(playlist: { id: number; name: string }) {
     setEditingId(playlist.id);
     setEditName(playlist.name);
     setRenameError(null);
@@ -95,9 +65,44 @@ export function PlaylistsPage() {
     try {
       await renamePlaylist(playlistId, trimmed);
       setEditingId(null);
-      await loadPlaylists();
+      await reload();
     } catch (err) {
       setRenameError(err instanceof Error ? err.message : 'Could not rename playlist');
+    }
+  }
+
+  async function onRemove(playlistId: number, itemId: number) {
+    setItemError(null);
+    setBusyItemId(itemId);
+    try {
+      await removeItem(playlistId, itemId);
+    } catch (err) {
+      setItemError(err instanceof Error ? err.message : 'Could not remove film');
+    } finally {
+      setBusyItemId(null);
+    }
+  }
+
+  async function onMove(itemId: number) {
+    setItemError(null);
+    const raw = moveTargets[itemId];
+    const targetId = raw ? Number(raw) : NaN;
+    if (!Number.isFinite(targetId)) {
+      setItemError('Choose a playlist to move into');
+      return;
+    }
+    setBusyItemId(itemId);
+    try {
+      await moveItem(itemId, targetId);
+      setMoveTargets((previous) => {
+        const next = { ...previous };
+        delete next[itemId];
+        return next;
+      });
+    } catch (err) {
+      setItemError(err instanceof Error ? err.message : 'Could not move film');
+    } finally {
+      setBusyItemId(null);
     }
   }
 
@@ -127,7 +132,8 @@ export function PlaylistsPage() {
     <>
       <h1 className={page.heading}>Your playlists</h1>
       <p className={page.lede}>
-        Logged in as {authState.displayName ?? authState.username}.
+        Logged in as {authState.displayName ?? authState.username}. Add films from the catalog or
+        film detail page; remove or move them here.
       </p>
 
       <form className={styles.createForm} onSubmit={onCreate}>
@@ -155,25 +161,25 @@ export function PlaylistsPage() {
         )}
       </form>
 
-      {state.status === 'loading' && (
+      {!ready && (
         <p className={page.lede} role="status">
           Loading playlists&hellip;
         </p>
       )}
 
-      {state.status === 'failed' && (
-        <p className={page.error} role="alert">
-          Could not load playlists: {state.message}
+      {itemError && (
+        <p className={page.formError} role="alert">
+          {itemError}
         </p>
       )}
 
-      {state.status === 'loaded' && state.playlists.length === 0 && (
+      {ready && playlists.length === 0 && (
         <p className={page.lede}>You do not have any playlists yet. Create one above.</p>
       )}
 
-      {state.status === 'loaded' && state.playlists.length > 0 && (
+      {ready && playlists.length > 0 && (
         <ul className={styles.list}>
-          {state.playlists.map((playlist) => (
+          {playlists.map((playlist) => (
             <li key={playlist.id} className={styles.playlistCard}>
               <div className={styles.playlistHeader}>
                 {editingId === playlist.id ? (
@@ -222,23 +228,71 @@ export function PlaylistsPage() {
                 </span>
               </div>
 
-              {playlist.films.length > 0 && (
-                <div className={styles.films}>
-                  <FilmGrid compact>
-                    {playlist.films.map((movie, index) => (
-                      <MovieCard
-                        key={`${playlist.id}-${movie.tmdbId}-${index}`}
-                        {...movieCardProps(
-                          movie,
-                          isStarred(movie.tmdbId),
-                          () => toggleStarred(movie.tmdbId),
-                          () => navigate(`/movies/${movie.tmdbId}`),
-                          true,
-                        )}
-                      />
-                    ))}
-                  </FilmGrid>
-                </div>
+              {playlist.entries.length > 0 && (
+                <ul className={styles.entryList}>
+                  {playlist.entries.map((entry) => {
+                    const otherPlaylists = playlists.filter((candidate) => candidate.id !== playlist.id);
+                    return (
+                      <li key={entry.itemId} className={styles.filmEntry}>
+                        <div className={styles.filmCardWrap}>
+                          <FilmGrid compact>
+                            <MovieCard
+                              {...movieCardProps(
+                                entry.film,
+                                false,
+                                () => {},
+                                () => navigate(`/movies/${entry.film.tmdbId}`),
+                                false,
+                              )}
+                            />
+                          </FilmGrid>
+                        </div>
+                        <div className={styles.filmActions}>
+                          <button
+                            type="button"
+                            className={styles.removeButton}
+                            disabled={busyItemId === entry.itemId}
+                            onClick={() => void onRemove(playlist.id, entry.itemId)}
+                          >
+                            Remove from this list
+                          </button>
+                          {otherPlaylists.length > 0 && (
+                            <div className={styles.moveRow}>
+                              <label className={styles.moveLabel}>
+                                Move to
+                                <select
+                                  className={styles.moveSelect}
+                                  value={moveTargets[entry.itemId] ?? ''}
+                                  onChange={(event) =>
+                                    setMoveTargets((previous) => ({
+                                      ...previous,
+                                      [entry.itemId]: event.target.value,
+                                    }))
+                                  }
+                                >
+                                  <option value="">Choose playlist</option>
+                                  {otherPlaylists.map((target) => (
+                                    <option key={target.id} value={target.id}>
+                                      {target.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <button
+                                type="button"
+                                className={styles.moveButton}
+                                disabled={busyItemId === entry.itemId}
+                                onClick={() => void onMove(entry.itemId)}
+                              >
+                                Move
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
             </li>
           ))}

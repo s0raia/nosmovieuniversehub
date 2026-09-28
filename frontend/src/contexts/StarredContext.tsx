@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { fetchStarredIds, starFilm, unstarFilm } from '../api/catalogue';
 import { useAuth } from './AuthContext';
+import { useMyPlaylists } from './MyPlaylistsContext';
 
 type StarredContextValue = {
   isStarred: (tmdbId: number) => boolean;
@@ -20,6 +21,7 @@ const StarredContext = createContext<StarredContextValue | null>(null);
 
 export function StarredProvider({ children }: { children: ReactNode }) {
   const { state: authState } = useAuth();
+  const { reload: reloadPlaylists } = useMyPlaylists();
   const [starred, setStarred] = useState<Set<number>>(() => new Set());
   const [ready, setReady] = useState(false);
 
@@ -74,6 +76,7 @@ export function StarredProvider({ children }: { children: ReactNode }) {
         } else {
           await starFilm(tmdbId);
         }
+        await reloadPlaylists();
       } catch {
         setStarred((previous) => {
           const next = new Set(previous);
@@ -86,7 +89,7 @@ export function StarredProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [authState.status, starred],
+    [authState.status, starred, reloadPlaylists],
   );
 
   const value = useMemo(

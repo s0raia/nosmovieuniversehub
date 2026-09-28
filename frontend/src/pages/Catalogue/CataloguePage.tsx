@@ -4,8 +4,9 @@ import { fetchMovies, type Movie } from '../../api/catalogue';
 import { CatalogueFilters } from '../../components/CatalogueFilters/CatalogueFilters';
 import { FilmGrid } from '../../components/FilmGrid/FilmGrid';
 import { MovieCard } from '../../components/MovieCard/MovieCard';
+import { PlaylistFilmDialog } from '../../components/PlaylistFilmDialog/PlaylistFilmDialog';
 import { useAuth } from '../../contexts/AuthContext';
-import { useStarred } from '../../contexts/StarredContext';
+import { useMyPlaylists } from '../../contexts/MyPlaylistsContext';
 import {
   collectGenres,
   defaultCatalogueFilters,
@@ -23,10 +24,11 @@ type LoadState =
 export function CataloguePage() {
   const navigate = useNavigate();
   const { state: authState } = useAuth();
-  const { isStarred, toggleStarred } = useStarred();
+  const { isInAnyPlaylist } = useMyPlaylists();
   const showPlaylistStar = authState.status === 'signed-in';
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [filters, setFilters] = useState<Filters>(defaultCatalogueFilters);
+  const [picker, setPicker] = useState<{ tmdbId: number; label: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -97,8 +99,13 @@ export function CataloguePage() {
                   key={movie.tmdbId}
                   {...movieCardProps(
                     movie,
-                    isStarred(movie.tmdbId),
-                    () => toggleStarred(movie.tmdbId),
+                    isInAnyPlaylist(movie.tmdbId),
+                    () => {
+                      const label = movie.releaseYear
+                        ? `${movie.title ?? 'Untitled'} (${movie.releaseYear})`
+                        : (movie.title ?? 'Untitled');
+                      setPicker({ tmdbId: movie.tmdbId, label });
+                    },
                     () => navigate(`/movies/${movie.tmdbId}`),
                     showPlaylistStar,
                   )}
@@ -107,6 +114,14 @@ export function CataloguePage() {
             </FilmGrid>
           )}
         </>
+      )}
+
+      {picker && (
+        <PlaylistFilmDialog
+          tmdbId={picker.tmdbId}
+          filmLabel={picker.label}
+          onClose={() => setPicker(null)}
+        />
       )}
     </>
   );

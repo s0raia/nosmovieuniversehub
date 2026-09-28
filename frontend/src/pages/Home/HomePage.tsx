@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { fetchHome, fetchMyPlaylists, type HomeSection, type Movie, type Playlist } from '../../api/catalogue';
+import { fetchHome, type HomeSection, type Movie } from '../../api/catalogue';
 import { HomeSection as HomeSectionBlock } from '../../components/HomeSection/HomeSection';
+import { PlaylistFilmDialog } from '../../components/PlaylistFilmDialog/PlaylistFilmDialog';
 import { useAuth } from '../../contexts/AuthContext';
-import { useStarred } from '../../contexts/StarredContext';
+import { useMyPlaylists } from '../../contexts/MyPlaylistsContext';
 import page from '../../layouts/Page.module.css';
 import homeStyles from './HomePage.module.css';
 
@@ -15,10 +16,10 @@ type LoadState =
 export function HomePage() {
   const navigate = useNavigate();
   const { state: authState } = useAuth();
-  const { isStarred, toggleStarred } = useStarred();
+  const { playlists: myPlaylists, isInAnyPlaylist } = useMyPlaylists();
   const showPlaylistStar = authState.status === 'signed-in';
   const [state, setState] = useState<LoadState>({ status: 'loading' });
-  const [myPlaylists, setMyPlaylists] = useState<Playlist[]>([]);
+  const [picker, setPicker] = useState<{ tmdbId: number; label: string } | null>(null);
 
   // Home is public: load sections immediately, without waiting for sign-in.
   useEffect(() => {
@@ -40,25 +41,14 @@ export function HomePage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (authState.status !== 'signed-in') {
-      setMyPlaylists([]);
-      return;
-    }
-    let active = true;
-    fetchMyPlaylists()
-      .then((playlists) => {
-        if (active) setMyPlaylists(playlists);
-      })
-      .catch(() => {
-        if (active) setMyPlaylists([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, [authState.status]);
-
   const openMovie = (movie: Movie) => navigate(`/movies/${movie.tmdbId}`);
+
+  function openPlaylistPicker(movie: Movie) {
+    const label = movie.releaseYear
+      ? `${movie.title ?? 'Untitled'} (${movie.releaseYear})`
+      : (movie.title ?? 'Untitled');
+    setPicker({ tmdbId: movie.tmdbId, label });
+  }
 
   return (
     <>
@@ -104,12 +94,20 @@ export function HomePage() {
               key={section.id}
               section={section}
               showPlaylistStar={showPlaylistStar}
-              isStarred={isStarred}
-              onToggleStarred={toggleStarred}
+              isInAnyPlaylist={isInAnyPlaylist}
+              onManagePlaylists={openPlaylistPicker}
               onOpenMovie={openMovie}
             />
           ))}
         </div>
+      )}
+
+      {picker && (
+        <PlaylistFilmDialog
+          tmdbId={picker.tmdbId}
+          filmLabel={picker.label}
+          onClose={() => setPicker(null)}
+        />
       )}
     </>
   );

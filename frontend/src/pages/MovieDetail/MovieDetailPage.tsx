@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchMovie, fetchMyRating, saveMyRating, type MovieDetail } from '../../api/catalogue';
+import { PlaylistFilmDialog } from '../../components/PlaylistFilmDialog/PlaylistFilmDialog';
 import { useAuth } from '../../contexts/AuthContext';
-import { useStarred } from '../../contexts/StarredContext';
+import { sortPlaylistsForPicker, useMyPlaylists } from '../../contexts/MyPlaylistsContext';
 import page from '../../layouts/Page.module.css';
 import styles from './MovieDetailPage.module.css';
 
@@ -31,11 +32,15 @@ export function MovieDetailPage() {
   const { tmdbId: tmdbIdParam } = useParams();
   const tmdbId = Number(tmdbIdParam);
   const { state: authState } = useAuth();
-  const { isStarred, toggleStarred } = useStarred();
+  const { playlists, isInPlaylist, addToPlaylist, removeFilmFromPlaylist } = useMyPlaylists();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [myStars, setMyStars] = useState<number | ''>('');
   const [ratingMessage, setRatingMessage] = useState<string | null>(null);
   const [savingRating, setSavingRating] = useState(false);
+  const [addTargetPlaylistId, setAddTargetPlaylistId] = useState('');
+  const [playlistMessage, setPlaylistMessage] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [playlistBusy, setPlaylistBusy] = useState(false);
 
   useEffect(() => {
     if (!Number.isFinite(tmdbId)) {
@@ -109,6 +114,27 @@ export function MovieDetailPage() {
         ? `${state.movie.title} (${state.movie.releaseYear})`
         : state.movie.title
       : null;
+
+  const memberPlaylists = Number.isFinite(tmdbId)
+    ? sortPlaylistsForPicker(playlists).filter((playlist) => isInPlaylist(tmdbId, playlist.id))
+    : [];
+
+  async function onAddToSelectedPlaylist() {
+    if (!Number.isFinite(tmdbId) || addTargetPlaylistId === '') {
+      return;
+    }
+    setPlaylistBusy(true);
+    setPlaylistMessage(null);
+    try {
+      await addToPlaylist(Number(addTargetPlaylistId), tmdbId);
+      setPlaylistMessage('Added to playlist.');
+      setAddTargetPlaylistId('');
+    } catch (err) {
+      setPlaylistMessage(err instanceof Error ? err.message : 'Could not add to playlist');
+    } finally {
+      setPlaylistBusy(false);
+    }
+  }
 
   return (
     <>
@@ -204,14 +230,74 @@ export function MovieDetailPage() {
 
             {authState.status === 'signed-in' && (
               <div className={styles.userActions}>
-                <button
-                  type="button"
-                  className={`${styles.starAction} ${isStarred(tmdbId) ? styles.starActionActive : ''}`}
-                  onClick={() => void toggleStarred(tmdbId)}
-                  aria-pressed={isStarred(tmdbId)}
-                >
-                  {isStarred(tmdbId) ? '★ In Starred picks' : '☆ Add to Starred picks'}
-                </button>
+                <div className={styles.playlistBlock}>
+                  <h3 className={styles.playlistHeading}>Your playlists</h3>
+                  <button
+                    type="button"
+                    className={styles.starAction}
+                    onClick={() => setShowPicker(true)}
+                  >
+                    Manage playlist membership
+                  </button>
+                  <div className={styles.addRow}>
+                    <label className={styles.rateLabel}>
+                      Add to playlist
+                      <select
+                        className={styles.rateSelect}
+                        value={addTargetPlaylistId}
+                        onChange={(event) => setAddTargetPlaylistId(event.target.value)}
+                      >
+                        <option value="">Choose playlist</option>
+                        {sortPlaylistsForPicker(playlists).map((playlist) => (
+                          <option key={playlist.id} value={playlist.id}>
+                            {playlist.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      className={styles.rateButton}
+                      disabled={playlistBusy || addTargetPlaylistId === ''}
+                      onClick={() => void onAddToSelectedPlaylist()}
+                    >
+                      {playlistBusy ? 'Adding…' : 'Add'}
+                    </button>
+                  </div>
+                  {memberPlaylists.length > 0 && (
+                    <ul className={styles.memberList}>
+                      {memberPlaylists.map((playlist) => (
+                        <li key={playlist.id} className={styles.memberItem}>
+                          <span>{playlist.name}</span>
+                          <button
+                            type="button"
+                            className={styles.memberRemove}
+                            disabled={playlistBusy}
+                            onClick={() => {
+                              setPlaylistBusy(true);
+                              setPlaylistMessage(null);
+                              void removeFilmFromPlaylist(playlist.id, tmdbId)
+                                .then(() => setPlaylistMessage(`Removed from ${playlist.name}.`))
+                                .catch((err) =>
+                                  setPlaylistMessage(
+                                    err instanceof Error ? err.message : 'Could not remove',
+                                  ),
+                                )
+                                .finally(() => setPlaylistBusy(false));
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {playlistMessage && (
+                    <p className={styles.rateMessage} role="status">
+                      {playlistMessage}
+                    </p>
+                  )}
+                </div>
 
                 <form className={styles.rateForm} onSubmit={onSaveRating}>
                   <label className={styles.rateLabel}>
@@ -244,6 +330,14 @@ export function MovieDetailPage() {
             )}
           </div>
         </article>
+      )}
+
+      {showPicker && displayTitle && (
+        <PlaylistFilmDialog
+          tmdbId={tmdbId}
+          filmLabel={displayTitle}
+          onClose={() => setShowPicker(false)}
+        />
       )}
     </>
   );

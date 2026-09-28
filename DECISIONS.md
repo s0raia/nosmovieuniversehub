@@ -20,9 +20,11 @@ A TMDB average without its vote count is misleading. The UI always shows average
 - **Soft-deleted playlists:** `deleted_at`; no global `@SQLRestriction` so the importer can read/write deleted rows.
 - **Same title, different years:** primary key is `tmdb_id`; UI shows `Title (Year)`.
 
-## Star icon
+## Star icon and playlist items
 
-Adds/removes the film in the member’s **Starred picks** playlist (`external_id` `starred-{username}`), persisted in `playlist_item`.
+The star on film cards opens a **playlist picker**: add or remove the film in any of the member’s active playlists via `POST/DELETE /api/me/playlists/{id}/items`. Each row in playlist payloads includes an `itemId` so remove and move work when the same `tmdb_id` appears twice in one list (seed trap).
+
+**Starred picks** (`external_id` `starred-{username}`) remains a dedicated list; `POST/DELETE /api/me/starred/{tmdbId}` is a shortcut to add/remove there. **Move** between lists: `POST /api/me/playlist-items/{itemId}/move` with `{ targetPlaylistId }`.
 
 ## Deletes
 

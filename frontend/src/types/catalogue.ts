@@ -25,13 +25,19 @@ export type HomeSection = {
   films: Movie[];
 };
 
+export type PlaylistEntry = {
+  itemId: number;
+  position: number;
+  film: Movie;
+};
+
 export type Playlist = {
   id: number;
   externalId: string | null;
   name: string;
   owner: string;
   filmCount: number;
-  films: Movie[];
+  entries: PlaylistEntry[];
 };
 
 export type PlaylistCompareSide = {

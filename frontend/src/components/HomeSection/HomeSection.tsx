@@ -12,16 +12,16 @@ const SECTION_HINTS: Record<string, string> = {
 type HomeSectionProps = {
   section: HomeSectionData;
   showPlaylistStar: boolean;
-  isStarred: (tmdbId: number) => boolean;
-  onToggleStarred: (tmdbId: number) => void;
+  isInAnyPlaylist: (tmdbId: number) => boolean;
+  onManagePlaylists: (movie: Movie) => void;
   onOpenMovie: (movie: Movie) => void;
 };
 
 export function HomeSection({
   section,
   showPlaylistStar,
-  isStarred,
-  onToggleStarred,
+  isInAnyPlaylist,
+  onManagePlaylists,
   onOpenMovie,
 }: HomeSectionProps) {
   return (
@@ -43,8 +43,8 @@ export function HomeSection({
               key={movie.tmdbId}
               {...movieCardProps(
                 movie,
-                isStarred(movie.tmdbId),
-                () => onToggleStarred(movie.tmdbId),
+                isInAnyPlaylist(movie.tmdbId),
+                () => onManagePlaylists(movie),
                 () => onOpenMovie(movie),
                 showPlaylistStar,
               )}

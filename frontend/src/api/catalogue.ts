@@ -78,3 +78,51 @@ export async function saveMyRating(tmdbId: number, stars: number): Promise<void>
     throw new Error('Could not save rating');
   }
 }
+
+export async function addPlaylistItem(
+  playlistId: number,
+  tmdbId: number,
+): Promise<{ itemId: number; position: number; film: Movie }> {
+  await ensureCsrfCookie();
+  const response = await apiFetch(`/api/me/playlists/${playlistId}/items`, {
+    method: 'POST',
+    body: JSON.stringify({ tmdbId }),
+  });
+  if (response.status === 403) {
+    throw new Error('You cannot edit this playlist');
+  }
+  if (!response.ok) {
+    throw new Error('Could not add film to playlist');
+  }
+  return (await response.json()) as { itemId: number; position: number; film: Movie };
+}
+
+export async function removePlaylistItem(playlistId: number, itemId: number): Promise<void> {
+  await ensureCsrfCookie();
+  const response = await apiFetch(`/api/me/playlists/${playlistId}/items/${itemId}`, {
+    method: 'DELETE',
+  });
+  if (response.status === 403) {
+    throw new Error('You cannot edit this playlist');
+  }
+  if (!response.ok) {
+    throw new Error('Could not remove film from playlist');
+  }
+}
+
+export async function movePlaylistItem(
+  itemId: number,
+  targetPlaylistId: number,
+): Promise<void> {
+  await ensureCsrfCookie();
+  const response = await apiFetch(`/api/me/playlist-items/${itemId}/move`, {
+    method: 'POST',
+    body: JSON.stringify({ targetPlaylistId }),
+  });
+  if (response.status === 403) {
+    throw new Error('You cannot move into that playlist');
+  }
+  if (!response.ok) {
+    throw new Error('Could not move film');
+  }
+}
