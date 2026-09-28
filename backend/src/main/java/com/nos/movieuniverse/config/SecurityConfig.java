@@ -2,20 +2,39 @@ package com.nos.movieuniverse.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Security beans.
  *
- * <p>No {@code SecurityFilterChain} yet, so Spring Security's defaults still
- * apply: every endpoint is locked and a password is printed at startup. That is
- * intentional for now - form login and the session setup arrive with the auth
- * work. The encoder is here already because the seed importer needs to hash the
- * passwords it invents for the seeded users.
+ * <p>The catalogue is public because it is: film data from TMDB, and playlists
+ * the seed already publishes. Everything else stays locked behind the defaults.
+ * Login, sessions and the rules guarding writes arrive with the auth work, at
+ * which point the blanket permit on {@code GET /api/**} narrows to the
+ * endpoints that really are anonymous.
  */
 @Configuration
 public class SecurityConfig {
+
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http.authorizeHttpRequests(requests -> requests
+                        .requestMatchers(HttpMethod.GET, "/api/**")
+                        .permitAll()
+                        .requestMatchers("/actuator/health")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
+                .httpBasic(basic -> {})
+                // Safe while the API is read-only. This has to come back, scoped to
+                // the write endpoints, as soon as anything accepts a POST.
+                .csrf(csrf -> csrf.disable())
+                .build();
+    }
 
     @Bean
     PasswordEncoder passwordEncoder() {

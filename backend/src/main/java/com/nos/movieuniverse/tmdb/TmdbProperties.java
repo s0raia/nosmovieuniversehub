@@ -21,10 +21,16 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties(prefix = "tmdb")
 public record TmdbProperties(
         @DefaultValue("https://api.themoviedb.org/3") String baseUrl,
+        @DefaultValue("https://image.tmdb.org/t/p/w342") String imageBaseUrl,
         String readAccessToken,
         @DefaultValue("en-US") String language,
         @DefaultValue("60") long throttleMillis,
         @DefaultValue("true") boolean enrichStubsOnStartup) {
+
+    /** Builds a full poster URL, or null when the film has no poster. */
+    public String posterUrl(String posterPath) {
+        return posterPath == null || posterPath.isBlank() ? null : imageBaseUrl + posterPath;
+    }
 
     public boolean isConfigured() {
         return readAccessToken != null && !readAccessToken.isBlank();
