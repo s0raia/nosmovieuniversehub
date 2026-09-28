@@ -12,9 +12,16 @@ export function AppShell({ children }: AppShellProps) {
         <div className={styles.headerInner}>
           <span className={styles.wordmark}>MovieUniverse Hub</span>
           <nav className={styles.nav} aria-label="Main">
-            <a className={styles.navLink} href="/">Search</a>
-            <a className={styles.navLink} href="/playlists">Playlists</a>
-            <a className={styles.navLink} href="/about">About</a>
+            <a className={`${styles.navLink} ${styles.navLinkCurrent}`} href="/" aria-current="page">
+              Catalogue
+            </a>
+            {/* Full-page hrefs 404 in the Vite SPA until routing exists (Block D). */}
+            <span className={styles.navLinkSoon} title="Coming in Block D">
+              Playlists
+            </span>
+            <span className={styles.navLinkSoon} title="Coming in Block D">
+              About
+            </span>
           </nav>
         </div>
       </header>

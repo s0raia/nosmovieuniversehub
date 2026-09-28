@@ -53,6 +53,21 @@
   outline-offset: var(--focus-offset);
 }
 
+.navLinkCurrent {
+  background-color: var(--white);
+  color: var(--teal);
+}
+
+.navLinkSoon {
+  border: var(--border-width) dashed var(--white);
+  color: var(--white);
+  cursor: default;
+  font-weight: 700;
+  opacity: 0.85;
+  padding: var(--space-1) var(--space-3);
+  text-transform: uppercase;
+}
+
 .main {
   flex: 1;
   margin: 0 auto;
