@@ -1,6 +1,7 @@
 import styles from './MovieCard.module.css';
 
 export type MovieCardProps = {
+  tmdbId: number;
   title: string;
   /** Null for films TMDB has no release date for. */
   year: number | null;
@@ -13,6 +14,8 @@ export type MovieCardProps = {
   combinedVotes: number;
   inPlaylist: boolean;
   onTogglePlaylist: () => void;
+  /** Opens the film detail view when the card body or poster is activated. */
+  onOpen?: () => void;
 };
 
 function formatVotes(votes: number): string {
@@ -29,27 +32,19 @@ export function MovieCard({
   combinedVotes,
   inPlaylist,
   onTogglePlaylist,
+  onOpen,
 }: MovieCardProps) {
   const label = year ? `${title} (${year})` : title;
+  const interactive = Boolean(onOpen);
 
-  return (
-    <article className={styles.card}>
+  const body = (
+    <>
       <img
         className={styles.poster}
         src={posterUrl ?? ''}
         alt={posterUrl ? `Poster for ${label}` : ''}
         loading="lazy"
       />
-
-      <button
-        type="button"
-        className={`${styles.starButton} ${inPlaylist ? styles.starButtonActive : ''}`}
-        onClick={onTogglePlaylist}
-        aria-pressed={inPlaylist}
-        aria-label={inPlaylist ? `Remove ${label} from playlist` : `Add ${label} to playlist`}
-      >
-        {inPlaylist ? '\u2605' : '\u2606'}
-      </button>
 
       <div className={styles.body}>
         <h3 className={styles.title}>{title}</h3>
@@ -73,6 +68,31 @@ export function MovieCard({
           )}
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <article className={`${styles.card} ${interactive ? styles.cardInteractive : ''}`}>
+      <button
+        type="button"
+        className={`${styles.starButton} ${inPlaylist ? styles.starButtonActive : ''}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onTogglePlaylist();
+        }}
+        aria-pressed={inPlaylist}
+        aria-label={inPlaylist ? `Remove ${label} from playlist` : `Add ${label} to playlist`}
+      >
+        {inPlaylist ? '\u2605' : '\u2606'}
+      </button>
+
+      {interactive ? (
+        <button type="button" className={styles.openButton} onClick={onOpen}>
+          {body}
+        </button>
+      ) : (
+        body
+      )}
     </article>
   );
 }

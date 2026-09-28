@@ -1,0 +1,103 @@
+.layout {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(200px, 280px) 1fr;
+}
+
+@media (max-width: 720px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.poster {
+  aspect-ratio: 2 / 3;
+  background-color: var(--teal-tint);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  object-fit: cover;
+  width: 100%;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 1rem;
+  margin-top: var(--space-2);
+}
+
+.genreList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+
+.genre {
+  background-color: var(--teal-tint);
+  border: 3px solid var(--ink);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 2px var(--space-2);
+}
+
+.overview {
+  line-height: 1.55;
+  margin-top: var(--space-4);
+  max-width: 65ch;
+}
+
+.ratings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.badge {
+  border: 3px solid var(--ink);
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: var(--space-1) var(--space-2);
+}
+
+.badgeTmdb {
+  background-color: var(--teal-tint);
+  color: var(--ink);
+}
+
+.badgeLocal {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+.badgeCombined {
+  background-color: var(--teal-mid);
+  color: var(--white);
+}
+
+.badgeMuted {
+  background-color: var(--paper);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.backLink {
+  color: var(--teal);
+  display: inline-block;
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+}
+
+.backLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}

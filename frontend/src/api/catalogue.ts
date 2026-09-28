@@ -1,16 +1,5 @@
-/*
-  Calls go to /api, which Vite proxies to the backend in development and nginx
-  proxies in the container. The browser therefore only ever sees one origin, so
-  there is no CORS handling here and none on the server.
-*/
+import { apiFetch } from './client';
 
-/**
- * A film as the backend returns it.
- *
- * Every rating field is nullable, and null means "no information", never zero.
- * A film TMDB holds no votes for has a null average, and showing that as 0
- * would be wrong: 0 is a real and very bad score.
- */
 export type Movie = {
   tmdbId: number;
   title: string | null;
@@ -24,6 +13,18 @@ export type Movie = {
   combinedRating: number | null;
 };
 
+export type MovieDetail = Movie & {
+  originalTitle: string | null;
+  runtimeMinutes: number | null;
+  genres: string[];
+};
+
+export type HomeSection = {
+  id: string;
+  title: string;
+  films: Movie[];
+};
+
 export type Playlist = {
   id: number;
   externalId: string | null;
@@ -34,13 +35,15 @@ export type Playlist = {
 };
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(path, { headers: { Accept: 'application/json' } });
+  const response = await apiFetch(path);
   if (!response.ok) {
     throw new Error(`${path} responded ${response.status}`);
   }
   return (await response.json()) as T;
 }
 
+export const fetchHome = () => getJson<HomeSection[]>('/api/home');
 export const fetchMovies = () => getJson<Movie[]>('/api/movies');
-
+export const fetchMovie = (tmdbId: number) => getJson<MovieDetail>(`/api/movies/${tmdbId}`);
 export const fetchPlaylists = () => getJson<Playlist[]>('/api/playlists');
+export const fetchMyPlaylists = () => getJson<Playlist[]>('/api/me/playlists');
