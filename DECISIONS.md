@@ -30,6 +30,8 @@ No user API to delete whole playlists, catalogue films, or rating rows. `DELETE 
 
 ## Playlist comparison
 
+The briefing requires comparing two lists but does **not** require login for that feature. Compare is **read-only**: `GET /api/playlists` and `GET /api/playlists/compare` stay public; only **active** playlists (non-deleted) from registered app users (seed, demo, and anyone who signed up) appear in the picker. Creating playlists, starring, and rating still require a session, as briefing Section 6 asks when password login is used.
+
 Winner = higher mean **combined** rating across films in the playlist (slots without a combined score skipped). Also shows films in common.
 
 ## Game (optional briefing item)

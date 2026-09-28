@@ -97,10 +97,11 @@ export function ComparePlaylistsPage() {
 
   return (
     <>
-      <h1 className={page.heading}>Compare playlists</h1>
+      <h1 className={page.heading}>Compare Playlists!</h1>
       <p className={page.lede}>
-        Pick two active playlists. The winner is the one with the higher mean combined rating across
-        its films (films without a combined score are skipped).
+        Choose two active playlists owned by MovieUniverse members (seed, demo, or registered
+        accounts). The winner is the one with the higher mean combined rating across its films
+        (films without a combined score are skipped). No login required to compare.
       </p>
 
       {state.status === 'loading' && (
