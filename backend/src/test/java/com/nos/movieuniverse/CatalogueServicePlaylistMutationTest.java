@@ -100,6 +100,72 @@ class CatalogueServicePlaylistMutationTest {
     }
 
     @Test
+    void ownerCanAddAndRemovePlaylistItem() {
+        movieRepository.save(new Movie(999_010L));
+        var playlist = catalogueService.createPlaylist("owner-a", "Weekend picks");
+
+        var added = catalogueService.addPlaylistItem("owner-a", playlist.id(), 999_010L);
+        assertThat(added.film().tmdbId()).isEqualTo(999_010L);
+
+        var loaded = catalogueService.findPlaylistsForUser("owner-a");
+        assertThat(loaded).hasSize(1);
+        assertThat(loaded.getFirst().entries()).hasSize(1);
+        assertThat(loaded.getFirst().entries().getFirst().itemId()).isEqualTo(added.itemId());
+
+        catalogueService.removePlaylistItem("owner-a", playlist.id(), added.itemId());
+        assertThat(catalogueService.findPlaylistsForUser("owner-a").getFirst().entries()).isEmpty();
+    }
+
+    @Test
+    void otherUserCannotAddToPlaylist() {
+        var playlist = catalogueService.createPlaylist("owner-a", "Private");
+        movieRepository.save(new Movie(999_011L));
+
+        ResponseStatusException error = assertThrows(
+                ResponseStatusException.class,
+                () -> catalogueService.addPlaylistItem("owner-b", playlist.id(), 999_011L));
+
+        assertThat(error.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void ownerCanMoveItemBetweenPlaylists() {
+        movieRepository.save(new Movie(999_012L));
+        var source = catalogueService.createPlaylist("owner-a", "Source");
+        var target = catalogueService.createPlaylist("owner-a", "Target");
+        var item = catalogueService.addPlaylistItem("owner-a", source.id(), 999_012L);
+
+        var moved = catalogueService.movePlaylistItem("owner-a", item.itemId(), target.id());
+        assertThat(moved.film().tmdbId()).isEqualTo(999_012L);
+        assertThat(catalogueService.findPlaylistsForUser("owner-a").stream()
+                        .filter(p -> p.id().equals(source.id()))
+                        .findFirst()
+                        .orElseThrow()
+                        .entries())
+                .isEmpty();
+        assertThat(catalogueService.findPlaylistsForUser("owner-a").stream()
+                        .filter(p -> p.id().equals(target.id()))
+                        .findFirst()
+                        .orElseThrow()
+                        .entries())
+                .hasSize(1);
+    }
+
+    @Test
+    void cannotMoveItemToAnotherUsersPlaylist() {
+        movieRepository.save(new Movie(999_013L));
+        var source = catalogueService.createPlaylist("owner-a", "Mine");
+        var target = catalogueService.createPlaylist("owner-b", "Theirs");
+        var item = catalogueService.addPlaylistItem("owner-a", source.id(), 999_013L);
+
+        ResponseStatusException error = assertThrows(
+                ResponseStatusException.class,
+                () -> catalogueService.movePlaylistItem("owner-a", item.itemId(), target.id()));
+
+        assertThat(error.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     void userCanUpsertRating() {
         movieRepository.save(new Movie(999_002L));
 

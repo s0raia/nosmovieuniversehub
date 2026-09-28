@@ -3,6 +3,7 @@ package com.nos.movieuniverse.service;
 import com.nos.movieuniverse.dto.MovieDetailResponse;
 import com.nos.movieuniverse.dto.MovieResponse;
 import com.nos.movieuniverse.dto.PlaylistCompareResponse;
+import com.nos.movieuniverse.dto.PlaylistItemResponse;
 import com.nos.movieuniverse.dto.PlaylistResponse;
 import com.nos.movieuniverse.dto.StarredIdsResponse;
 import com.nos.movieuniverse.dto.UserRatingResponse;
@@ -199,23 +200,71 @@ public class CatalogueService {
     }
 
     @Transactional
-    public void addStarredFilm(String username, long tmdbId) {
-        AppUser user = requireUser(username);
+    public PlaylistItemResponse addPlaylistItem(String username, long playlistId, long tmdbId) {
+        AppUser owner = requireUser(username);
+        Playlist playlist = requireOwnedPlaylist(owner, playlistId);
         Movie movie = movieRepository
                 .findById(tmdbId)
                 .orElseGet(() -> movieRepository.save(new Movie(tmdbId)));
-        Playlist starred = ensureStarredPlaylist(user);
-        boolean alreadyListed = starred.getItems().stream()
-                .anyMatch(item -> item.getMovie().getTmdbId() == tmdbId);
-        if (alreadyListed) {
-            return;
-        }
-        int nextPosition = starred.getItems().stream()
+        int nextPosition = playlistItemRepository.findByPlaylistIdOrderByPositionAsc(playlistId).stream()
                         .mapToInt(PlaylistItem::getPosition)
                         .max()
                         .orElse(0)
                 + 1;
-        playlistItemRepository.save(new PlaylistItem(starred, movie, nextPosition));
+        PlaylistItem saved = playlistItemRepository.save(new PlaylistItem(playlist, movie, nextPosition));
+        Map<Long, LocalRating> localRatings = loadLocalRatings();
+        return toItemResponse(saved, localRatings);
+    }
+
+    @Transactional
+    public void removePlaylistItem(String username, long playlistId, long itemId) {
+        AppUser owner = requireUser(username);
+        requireOwnedPlaylist(owner, playlistId);
+        PlaylistItem item = playlistItemRepository
+                .findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist item not found"));
+        if (item.getPlaylist().getId() != playlistId) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist item not found");
+        }
+        playlistItemRepository.delete(item);
+    }
+
+    @Transactional
+    public PlaylistItemResponse movePlaylistItem(String username, long itemId, long targetPlaylistId) {
+        AppUser owner = requireUser(username);
+        PlaylistItem item = playlistItemRepository
+                .findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist item not found"));
+        Playlist source = item.getPlaylist();
+        if (!source.getOwner().getId().equals(owner.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your playlist");
+        }
+        if (source.getId() == targetPlaylistId) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Film is already in that playlist");
+        }
+        Playlist target = requireOwnedPlaylist(owner, targetPlaylistId);
+        Movie movie = item.getMovie();
+        playlistItemRepository.delete(item);
+        int nextPosition = playlistItemRepository.findByPlaylistIdOrderByPositionAsc(targetPlaylistId).stream()
+                        .mapToInt(PlaylistItem::getPosition)
+                        .max()
+                        .orElse(0)
+                + 1;
+        PlaylistItem moved = playlistItemRepository.save(new PlaylistItem(target, movie, nextPosition));
+        Map<Long, LocalRating> localRatings = loadLocalRatings();
+        return toItemResponse(moved, localRatings);
+    }
+
+    @Transactional
+    public void addStarredFilm(String username, long tmdbId) {
+        AppUser user = requireUser(username);
+        Playlist starred = ensureStarredPlaylist(user);
+        List<PlaylistItem> existing =
+                playlistItemRepository.findByPlaylistIdAndMovieTmdbId(starred.getId(), tmdbId);
+        if (!existing.isEmpty()) {
+            return;
+        }
+        addPlaylistItem(username, starred.getId(), tmdbId);
     }
 
     @Transactional
@@ -261,26 +310,45 @@ public class CatalogueService {
     }
 
     private List<MovieResponse> filmsForPlaylist(long playlistId, Map<Long, LocalRating> localRatings) {
-        return playlistItemRepository.findByPlaylistIdOrderByPositionAsc(playlistId).stream()
-                .map(item -> {
-                    Movie movie = movieRepository
-                            .findById(item.getMovie().getTmdbId())
-                            .orElse(item.getMovie());
-                    return toSummary(movie, localRatings);
-                })
+        return entriesForPlaylist(playlistId, localRatings).stream()
+                .map(PlaylistItemResponse::film)
                 .toList();
     }
 
+    private List<PlaylistItemResponse> entriesForPlaylist(long playlistId, Map<Long, LocalRating> localRatings) {
+        return playlistItemRepository.findByPlaylistIdOrderByPositionAsc(playlistId).stream()
+                .map(item -> toItemResponse(item, localRatings))
+                .toList();
+    }
+
+    private PlaylistItemResponse toItemResponse(PlaylistItem item, Map<Long, LocalRating> localRatings) {
+        Movie movie = movieRepository
+                .findById(item.getMovie().getTmdbId())
+                .orElse(item.getMovie());
+        return new PlaylistItemResponse(
+                item.getId(), item.getPosition(), toSummary(movie, localRatings));
+    }
+
+    private Playlist requireOwnedPlaylist(AppUser owner, long playlistId) {
+        Playlist playlist = playlistRepository
+                .findByIdAndDeletedAtIsNull(playlistId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist not found"));
+        if (!playlist.getOwner().getId().equals(owner.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your playlist");
+        }
+        return playlist;
+    }
+
     private PlaylistResponse toResponse(Playlist playlist, Map<Long, LocalRating> localRatings) {
-        List<MovieResponse> films = filmsForPlaylist(playlist.getId(), localRatings);
+        List<PlaylistItemResponse> entries = entriesForPlaylist(playlist.getId(), localRatings);
 
         return new PlaylistResponse(
                 playlist.getId(),
                 playlist.getExternalId(),
                 playlist.getName(),
                 playlist.getOwner().getUsername(),
-                films.size(),
-                films);
+                entries.size(),
+                entries);
     }
 
     private MovieResponse toSummary(Movie movie, Map<Long, LocalRating> localRatings) {

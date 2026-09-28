@@ -1,6 +1,9 @@
 package com.nos.movieuniverse.controller;
 
+import com.nos.movieuniverse.dto.AddPlaylistItemRequest;
 import com.nos.movieuniverse.dto.CreatePlaylistRequest;
+import com.nos.movieuniverse.dto.MovePlaylistItemRequest;
+import com.nos.movieuniverse.dto.PlaylistItemResponse;
 import com.nos.movieuniverse.dto.PlaylistResponse;
 import com.nos.movieuniverse.dto.StarredIdsResponse;
 import com.nos.movieuniverse.dto.UpdatePlaylistRequest;
@@ -25,8 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Authenticated user mutations. There is no user-facing delete for whole
- * playlists, catalogue films, or rating rows; the star endpoints only remove a
- * film from the member's {@code Starred picks} list.
+ * playlists, catalogue films, or rating rows. Playlist membership is managed via
+ * item endpoints; {@code /starred} is a shortcut for the {@code Starred picks} list.
  */
 @RestController
 @RequestMapping("/api/me")
@@ -56,6 +59,32 @@ public class MeController {
             @PathVariable long id,
             @Valid @RequestBody UpdatePlaylistRequest request) {
         return catalogueService.renamePlaylist(user.getUsername(), id, request.name());
+    }
+
+    @PostMapping("/playlists/{playlistId}/items")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PlaylistItemResponse addPlaylistItem(
+            @AuthenticationPrincipal UserDetails user,
+            @PathVariable long playlistId,
+            @Valid @RequestBody AddPlaylistItemRequest request) {
+        return catalogueService.addPlaylistItem(user.getUsername(), playlistId, request.tmdbId());
+    }
+
+    @DeleteMapping("/playlists/{playlistId}/items/{itemId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removePlaylistItem(
+            @AuthenticationPrincipal UserDetails user,
+            @PathVariable long playlistId,
+            @PathVariable long itemId) {
+        catalogueService.removePlaylistItem(user.getUsername(), playlistId, itemId);
+    }
+
+    @PostMapping("/playlist-items/{itemId}/move")
+    public PlaylistItemResponse movePlaylistItem(
+            @AuthenticationPrincipal UserDetails user,
+            @PathVariable long itemId,
+            @Valid @RequestBody MovePlaylistItemRequest request) {
+        return catalogueService.movePlaylistItem(user.getUsername(), itemId, request.targetPlaylistId());
     }
 
     @GetMapping("/starred")
