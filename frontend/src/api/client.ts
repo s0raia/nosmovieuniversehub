@@ -3,6 +3,11 @@ function readCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+/** Loads the CSRF cookie the backend expects on POST requests. */
+export async function ensureCsrfCookie(): Promise<void> {
+  await apiFetch('/api/auth/csrf');
+}
+
 export async function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   if (!headers.has('Accept')) {

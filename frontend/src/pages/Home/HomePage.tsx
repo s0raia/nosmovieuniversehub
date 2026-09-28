@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchHome, type HomeSection, type Movie } from '../api/catalogue';
-import { HomeSection as HomeSectionBlock } from '../components/HomeSection/HomeSection';
-import { useStarred } from '../contexts/StarredContext';
-import page from './Page.module.css';
+import { fetchHome, type HomeSection, type Movie } from '../../api/catalogue';
+import { HomeSection as HomeSectionBlock } from '../../components/HomeSection/HomeSection';
+import { useAuth } from '../../contexts/AuthContext';
+import { useStarred } from '../../contexts/StarredContext';
+import page from '../../layouts/Page.module.css';
+import homeStyles from './HomePage.module.css';
 
 type LoadState =
   | { status: 'loading' }
@@ -12,7 +14,9 @@ type LoadState =
 
 export function HomePage() {
   const navigate = useNavigate();
+  const { state: authState } = useAuth();
   const { isStarred, toggleStarred } = useStarred();
+  const showPlaylistStar = authState.status === 'signed-in';
   const [state, setState] = useState<LoadState>({ status: 'loading' });
 
   // Home is public: load sections immediately, without waiting for sign-in.
@@ -56,16 +60,20 @@ export function HomePage() {
         </p>
       )}
 
-      {state.status === 'loaded' &&
-        state.sections.map((section) => (
-          <HomeSectionBlock
-            key={section.id}
-            section={section}
-            isStarred={isStarred}
-            onToggleStarred={toggleStarred}
-            onOpenMovie={openMovie}
-          />
-        ))}
+      {state.status === 'loaded' && (
+        <div className={homeStyles.sections}>
+          {state.sections.map((section) => (
+            <HomeSectionBlock
+              key={section.id}
+              section={section}
+              showPlaylistStar={showPlaylistStar}
+              isStarred={isStarred}
+              onToggleStarred={toggleStarred}
+              onOpenMovie={openMovie}
+            />
+          ))}
+        </div>
+      )}
     </>
   );
 }

@@ -6,6 +6,7 @@ export function movieCardProps(
   inPlaylist: boolean,
   onTogglePlaylist: () => void,
   onOpen?: () => void,
+  showPlaylistStar = false,
 ): MovieCardProps {
   return {
     tmdbId: movie.tmdbId,
@@ -18,6 +19,7 @@ export function movieCardProps(
     combinedVotes: movie.tmdbVoteCount + movie.localVoteCount,
     inPlaylist,
     onTogglePlaylist,
+    showPlaylistStar,
     onOpen,
   };
 }

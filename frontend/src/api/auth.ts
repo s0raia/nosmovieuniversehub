@@ -1,6 +1,7 @@
-import { apiFetch } from './client';
+import { apiFetch, ensureCsrfCookie } from './client';
+import type { User } from '../types/auth';
 
-export type User = { username: string };
+export type { User } from '../types/auth';
 
 export async function fetchCurrentUser(): Promise<User | null> {
   const response = await apiFetch('/api/auth/me');
@@ -14,6 +15,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
 }
 
 export async function login(username: string, password: string): Promise<User> {
+  await ensureCsrfCookie();
   const response = await apiFetch('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
@@ -25,6 +27,7 @@ export async function login(username: string, password: string): Promise<User> {
 }
 
 export async function register(username: string, password: string): Promise<User> {
+  await ensureCsrfCookie();
   const response = await apiFetch('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
@@ -39,5 +42,6 @@ export async function register(username: string, password: string): Promise<User
 }
 
 export async function logout(): Promise<void> {
+  await ensureCsrfCookie();
   await apiFetch('/api/auth/logout', { method: 'POST' });
 }

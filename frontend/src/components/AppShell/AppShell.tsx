@@ -27,7 +27,7 @@ export function AppShell({ children }: AppShellProps) {
               Home
             </NavLink>
             <NavLink className={navClass} to="/catalogue">
-              Catalogue
+              Catalog
             </NavLink>
             <NavLink className={navClass} to="/playlists">
               Playlists
@@ -35,20 +35,23 @@ export function AppShell({ children }: AppShellProps) {
 
             {state.status === 'signed-in' ? (
               <>
-                <span className={styles.userBadge} aria-label={`Signed in as ${state.username}`}>
-                  {state.username}
+                <span
+                  className={styles.userBadge}
+                  aria-label={`Logged in as ${state.displayName ?? state.username}`}
+                >
+                  {state.displayName ?? state.username}
                 </span>
                 <button
                   type="button"
                   className={styles.navButton}
                   onClick={() => void logout()}
                 >
-                  Sign out
+                  Log out
                 </button>
               </>
             ) : (
               <NavLink className={navClass} to="/account">
-                Sign in
+                Log in
               </NavLink>
             )}
           </nav>

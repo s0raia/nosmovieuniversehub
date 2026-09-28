@@ -1,18 +1,18 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AppShell } from './components/AppShell/AppShell';
 import { AuthProvider } from './contexts/AuthContext';
 import { StarredProvider } from './contexts/StarredContext';
-import { CataloguePage } from './pages/CataloguePage';
-import { HomePage } from './pages/HomePage';
-import { AuthAccountPage } from './pages/AuthAccountPage';
-import { MovieDetailPage } from './pages/MovieDetailPage';
-import { PlaylistsPage } from './pages/PlaylistsPage';
+import { MainLayout } from './layouts/MainLayout';
+import { AuthAccountPage } from './pages/Account/AuthAccountPage';
+import { CataloguePage } from './pages/Catalogue/CataloguePage';
+import { HomePage } from './pages/Home/HomePage';
+import { MovieDetailPage } from './pages/MovieDetail/MovieDetailPage';
+import { PlaylistsPage } from './pages/Playlists/PlaylistsPage';
 
 export default function App() {
   return (
     <AuthProvider>
       <StarredProvider>
-        <AppShell>
+        <MainLayout>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/catalogue" element={<CataloguePage />} />
@@ -23,7 +23,7 @@ export default function App() {
             <Route path="/register" element={<AuthAccountPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </AppShell>
+        </MainLayout>
       </StarredProvider>
     </AuthProvider>
   );

@@ -7,13 +7,14 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { ensureCsrfCookie } from '../api/client';
 import * as authApi from '../api/auth';
 
 type AuthState =
   /** Session check still running; public pages must not wait on this. */
   | { status: 'checking' }
   | { status: 'anonymous' }
-  | { status: 'signed-in'; username: string };
+  | { status: 'signed-in'; username: string; displayName: string | null };
 
 type AuthContextValue = {
   state: AuthState;
@@ -31,20 +32,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const user = await authApi.fetchCurrentUser();
-      setState(user ? { status: 'signed-in', username: user.username } : { status: 'anonymous' });
+      setState(
+        user
+          ? { status: 'signed-in', username: user.username, displayName: user.displayName }
+          : { status: 'anonymous' },
+      );
     } catch {
       setState({ status: 'anonymous' });
     }
   }, []);
 
   useEffect(() => {
-    void refresh();
+    void (async () => {
+      await ensureCsrfCookie();
+      await refresh();
+    })();
   }, [refresh]);
 
   const login = useCallback(
     async (username: string, password: string) => {
       const user = await authApi.login(username, password);
-      setState({ status: 'signed-in', username: user.username });
+      setState({
+        status: 'signed-in',
+        username: user.username,
+        displayName: user.displayName,
+      });
     },
     [],
   );

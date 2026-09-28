@@ -14,12 +14,14 @@ export type MovieCardProps = {
   combinedVotes: number;
   inPlaylist: boolean;
   onTogglePlaylist: () => void;
+  /** When false, the playlist star is hidden (e.g. visitor not signed in). */
+  showPlaylistStar?: boolean;
   /** Opens the film detail view when the card body or poster is activated. */
   onOpen?: () => void;
 };
 
 function formatVotes(votes: number): string {
-  return votes.toLocaleString('en-GB');
+  return votes.toLocaleString('en-US');
 }
 
 export function MovieCard({
@@ -32,6 +34,7 @@ export function MovieCard({
   combinedVotes,
   inPlaylist,
   onTogglePlaylist,
+  showPlaylistStar = false,
   onOpen,
 }: MovieCardProps) {
   const label = year ? `${title} (${year})` : title;
@@ -73,18 +76,20 @@ export function MovieCard({
 
   return (
     <article className={`${styles.card} ${interactive ? styles.cardInteractive : ''}`}>
-      <button
-        type="button"
-        className={`${styles.starButton} ${inPlaylist ? styles.starButtonActive : ''}`}
-        onClick={(event) => {
-          event.stopPropagation();
-          onTogglePlaylist();
-        }}
-        aria-pressed={inPlaylist}
-        aria-label={inPlaylist ? `Remove ${label} from playlist` : `Add ${label} to playlist`}
-      >
-        {inPlaylist ? '\u2605' : '\u2606'}
-      </button>
+      {showPlaylistStar && (
+        <button
+          type="button"
+          className={`${styles.starButton} ${inPlaylist ? styles.starButtonActive : ''}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onTogglePlaylist();
+          }}
+          aria-pressed={inPlaylist}
+          aria-label={inPlaylist ? `Remove ${label} from playlist` : `Add ${label} to playlist`}
+        >
+          {inPlaylist ? '\u2605' : '\u2606'}
+        </button>
+      )}
 
       {interactive ? (
         <button type="button" className={styles.openButton} onClick={onOpen}>

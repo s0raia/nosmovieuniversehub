@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchMovie, type MovieDetail } from '../api/catalogue';
-import page from './Page.module.css';
+import { fetchMovie, type MovieDetail } from '../../api/catalogue';
+import page from '../../layouts/Page.module.css';
 import styles from './MovieDetailPage.module.css';
 
 type LoadState =
@@ -10,7 +10,7 @@ type LoadState =
   | { status: 'failed'; message: string };
 
 function formatVotes(votes: number): string {
-  return votes.toLocaleString('en-GB');
+  return votes.toLocaleString('en-US');
 }
 
 function formatRuntime(minutes: number | null): string | null {
@@ -106,6 +106,14 @@ export function MovieDetailPage() {
                   </li>
                 ))}
               </ul>
+            )}
+
+            {(state.movie.spokenLanguages?.length ?? 0) > 0 && (
+              <p className={styles.languages}>
+                <span className={styles.languagesLabel}>Languages spoken</span>
+                {': '}
+                {state.movie.spokenLanguages.join(', ')}
+              </p>
             )}
 
             <div className={styles.ratings}>

@@ -1,0 +1,134 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.playlistCard {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  padding: var(--space-4);
+}
+
+.playlistHeader {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+
+.playlistName {
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.playlistMeta {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.films {
+  margin-top: var(--space-4);
+}
+
+.createForm {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+}
+
+.createHeading {
+  font-size: 1.125rem;
+  font-weight: 800;
+  margin-bottom: var(--space-1);
+}
+
+.createHint {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: var(--space-3);
+}
+
+.createRow {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.createLabel {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  font-weight: 700;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.createInput {
+  background-color: var(--paper);
+  border: var(--border-width) solid var(--ink);
+  color: var(--ink);
+  font: inherit;
+  padding: var(--space-2) var(--space-3);
+}
+
+.createInput:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.createButton,
+.saveButton,
+.cancelButton,
+.editNameButton {
+  background-color: var(--teal);
+  border: var(--border-width) solid var(--ink);
+  color: var(--white);
+  cursor: pointer;
+  font-weight: 700;
+  padding: var(--space-2) var(--space-3);
+}
+
+.createButton:hover,
+.saveButton:hover {
+  background-color: var(--teal-mid);
+}
+
+.createButton:focus-visible,
+.saveButton:focus-visible,
+.cancelButton:focus-visible,
+.editNameButton:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.cancelButton,
+.editNameButton {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+.editNameButton {
+  font-size: 0.875rem;
+}
+
+.renameBlock {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.renameActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

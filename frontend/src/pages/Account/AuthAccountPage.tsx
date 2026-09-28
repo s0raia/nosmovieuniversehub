@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import page from './Page.module.css';
+import { useAuth } from '../../contexts/AuthContext';
+import page from '../../layouts/Page.module.css';
 import styles from './AuthAccountPage.module.css';
 
 type Mode = 'sign-in' | 'register';
@@ -65,10 +65,10 @@ export function AuthAccountPage() {
 
   return (
     <>
-      <h1 className={page.heading}>{isSignIn ? 'Sign in' : 'Create account'}</h1>
+      <h1 className={page.heading}>{isSignIn ? 'Log in' : 'Create account'}</h1>
       <p className={page.lede}>
         {isSignIn
-          ? 'Use a seed user (ana, bruno, carla), a mock user (mock-01…), or an account you created.'
+          ? 'Use a demo account (ana, bruno, carla, mock-01, and others) or one you registered.'
           : 'Pick a username and password. You can open your playlists right after.'}
       </p>
 
@@ -80,7 +80,7 @@ export function AuthAccountPage() {
           className={`${styles.modeButton} ${isSignIn ? styles.modeButtonActive : ''}`}
           onClick={() => switchMode('sign-in')}
         >
-          Sign in
+          Log in
         </button>
         <button
           type="button"
@@ -89,7 +89,7 @@ export function AuthAccountPage() {
           className={`${styles.modeButton} ${!isSignIn ? styles.modeButtonActive : ''}`}
           onClick={() => switchMode('register')}
         >
-          Register
+          Sign up
         </button>
       </div>
 
@@ -146,10 +146,10 @@ export function AuthAccountPage() {
         <button className={page.submitButton} type="submit" disabled={submitting}>
           {submitting
             ? isSignIn
-              ? 'Signing in…'
+              ? 'Logging in…'
               : 'Creating account…'
             : isSignIn
-              ? 'Sign in'
+              ? 'Log in'
               : 'Create account'}
         </button>
       </form>
@@ -166,7 +166,7 @@ export function AuthAccountPage() {
           <>
             Already have an account?{' '}
             <button type="button" className={styles.inlineLink} onClick={() => switchMode('sign-in')}>
-              Sign in
+              Log in
             </button>
           </>
         )}{' '}
