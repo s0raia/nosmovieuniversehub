@@ -1,6 +1,6 @@
 package com.nos.movieuniverse.repository;
 
-import com.nos.movieuniverse.domain.Playlist;
+import com.nos.movieuniverse.model.Playlist;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

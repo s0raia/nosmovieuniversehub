@@ -1,6 +1,7 @@
 package com.nos.movieuniverse.seed;
 
 import com.nos.movieuniverse.repository.AppUserRepository;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -21,6 +22,9 @@ public class MockImportRunner implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(MockImportRunner.class);
     private static final String MARKER_USER = "mock-01";
 
+    /** Added after initial mock import; re-run mock_extra when any of these are absent. */
+    private static final List<String> LATER_MOCK_USERS = List.of("soraia", "joao", "sabrina", "andres");
+
     private final SeedImporter importer;
     private final AppUserRepository userRepository;
 
@@ -34,8 +38,15 @@ public class MockImportRunner implements ApplicationRunner {
         if (args.containsOption("import")) {
             return;
         }
-        if (userRepository.existsByUsername(MARKER_USER)) {
-            log.debug("Mock data already present, skipping mock_extra import");
+        boolean needsInitialMock = !userRepository.existsByUsername(MARKER_USER);
+        boolean needsLaterMockUsers =
+                LATER_MOCK_USERS.stream().anyMatch(username -> !userRepository.existsByUsername(username));
+        boolean needsDisplayNames = userRepository
+                .findByUsername(MARKER_USER)
+                .map(user -> user.getDisplayName() == null || user.getDisplayName().isBlank())
+                .orElse(false);
+        if (!needsInitialMock && !needsLaterMockUsers && !needsDisplayNames) {
+            log.debug("Mock data up to date, skipping mock_extra import");
             return;
         }
         log.info("Importing mock users and themed playlists from classpath:data/mock_extra.json");

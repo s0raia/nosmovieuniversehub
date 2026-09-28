@@ -12,24 +12,31 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        CookieCsrfTokenRepository csrf = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        csrf.setCookieName("XSRF-TOKEN");
+        CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfRepo.setCookieName("XSRF-TOKEN");
+        csrfRepo.setCookiePath("/");
+
+        CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
+        csrfHandler.setCsrfRequestAttributeName(null);
 
         return http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .csrf(c -> c.csrfTokenRepository(csrf))
+                .csrf(c -> c.csrfTokenRepository(csrfRepo).csrfTokenRequestHandler(csrfHandler))
+                .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/actuator/health")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/home", "/api/movies", "/api/movies/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/playlists")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/me")
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/csrf")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/logout")
                         .permitAll()

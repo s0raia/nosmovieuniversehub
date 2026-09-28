@@ -1,7 +1,7 @@
 package com.nos.movieuniverse.tmdb;
 
-import com.nos.movieuniverse.domain.Genre;
-import com.nos.movieuniverse.domain.Movie;
+import com.nos.movieuniverse.model.Genre;
+import com.nos.movieuniverse.model.Movie;
 import com.nos.movieuniverse.repository.GenreRepository;
 import com.nos.movieuniverse.repository.MovieRepository;
 import com.nos.movieuniverse.tmdb.dto.TmdbGenre;
@@ -67,6 +67,8 @@ public class MovieEnricher {
         movie.setVotes(payload.voteCountOrZero(), payload.hasVotes() ? payload.voteAverage() : null);
 
         movie.setFetchedAt(OffsetDateTime.now());
+        movie.setOriginalLanguage(payload.originalLanguage());
+        movie.setSpokenLanguages(payload.spokenLanguageEnglishNames());
 
         movie.getGenres().clear();
         movie.getGenres().addAll(resolveGenres(payload.genres()));

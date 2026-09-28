@@ -1,6 +1,6 @@
 package com.nos.movieuniverse.tmdb;
 
-import com.nos.movieuniverse.domain.Movie;
+import com.nos.movieuniverse.model.Movie;
 import com.nos.movieuniverse.repository.MovieRepository;
 import java.util.List;
 import org.slf4j.Logger;

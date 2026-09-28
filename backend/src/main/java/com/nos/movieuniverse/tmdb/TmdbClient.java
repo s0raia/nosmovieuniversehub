@@ -2,6 +2,7 @@ package com.nos.movieuniverse.tmdb;
 
 import com.nos.movieuniverse.tmdb.dto.TmdbMovie;
 import com.nos.movieuniverse.tmdb.dto.TmdbTrendingResponse;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -78,16 +79,44 @@ public class TmdbClient {
 
     /** TMDB trending movies this week (global list, not limited to the seed catalogue). */
     public List<Long> fetchTrendingMovieIds(int limit) {
+        return fetchResultIds("/trending/movie/week", limit, uriBuilder -> uriBuilder
+                .queryParam("language", properties.language()));
+    }
+
+    /** Films with a primary release date in the last six months, newest first. */
+    public List<Long> fetchLatestReleaseMovieIds(int limit) {
+        LocalDate today = LocalDate.now();
+        LocalDate sixMonthsAgo = today.minusMonths(6);
+        return fetchResultIds("/discover/movie", limit, uriBuilder -> uriBuilder
+                .queryParam("language", properties.language())
+                .queryParam("sort_by", "release_date.desc")
+                .queryParam("primary_release_date.gte", sixMonthsAgo.toString())
+                .queryParam("primary_release_date.lte", today.toString())
+                .queryParam("include_adult", false));
+    }
+
+    /** Upcoming wide releases from TMDB. */
+    public List<Long> fetchUpcomingMovieIds(int limit) {
+        return fetchResultIds("/movie/upcoming", limit, uriBuilder -> uriBuilder
+                .queryParam("language", properties.language())
+                .queryParam("region", "US"));
+    }
+
+    private List<Long> fetchResultIds(
+            String path, int limit, java.util.function.Consumer<
+                            org.springframework.web.util.UriBuilder>
+                    extraParams) {
         if (!properties.isConfigured()) {
             return List.of();
         }
         try {
             TmdbTrendingResponse body = restClient
                     .get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/trending/movie/week")
-                            .queryParam("language", properties.language())
-                            .build())
+                    .uri(uriBuilder -> {
+                        var builder = uriBuilder.path(path);
+                        extraParams.accept(builder);
+                        return builder.build();
+                    })
                     .retrieve()
                     .body(TmdbTrendingResponse.class);
             if (body == null || body.results() == null) {
@@ -99,7 +128,7 @@ public class TmdbClient {
                     .limit(limit)
                     .toList();
         } catch (RestClientException e) {
-            log.warn("Could not fetch TMDB trending list: {}", e.getClass().getSimpleName());
+            log.warn("Could not fetch TMDB list at {}: {}", path, e.getClass().getSimpleName());
             return List.of();
         }
     }
