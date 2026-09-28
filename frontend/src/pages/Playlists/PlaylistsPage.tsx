@@ -229,24 +229,22 @@ export function PlaylistsPage() {
               </div>
 
               {playlist.entries.length > 0 && (
-                <ul className={styles.entryList}>
+                <FilmGrid compact className={styles.filmGrid}>
                   {playlist.entries.map((entry) => {
-                    const otherPlaylists = playlists.filter((candidate) => candidate.id !== playlist.id);
+                    const otherPlaylists = playlists.filter(
+                      (candidate) => candidate.id !== playlist.id,
+                    );
                     return (
-                      <li key={entry.itemId} className={styles.filmEntry}>
-                        <div className={styles.filmCardWrap}>
-                          <FilmGrid compact>
-                            <MovieCard
-                              {...movieCardProps(
-                                entry.film,
-                                false,
-                                () => {},
-                                () => navigate(`/movies/${entry.film.tmdbId}`),
-                                false,
-                              )}
-                            />
-                          </FilmGrid>
-                        </div>
+                      <div key={entry.itemId} className={styles.entryCell}>
+                        <MovieCard
+                          {...movieCardProps(
+                            entry.film,
+                            false,
+                            () => {},
+                            () => navigate(`/movies/${entry.film.tmdbId}`),
+                            false,
+                          )}
+                        />
                         <div className={styles.filmActions}>
                           <button
                             type="button"
@@ -254,7 +252,7 @@ export function PlaylistsPage() {
                             disabled={busyItemId === entry.itemId}
                             onClick={() => void onRemove(playlist.id, entry.itemId)}
                           >
-                            Remove from this list
+                            Remove
                           </button>
                           {otherPlaylists.length > 0 && (
                             <div className={styles.moveRow}>
@@ -289,10 +287,10 @@ export function PlaylistsPage() {
                             </div>
                           )}
                         </div>
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
+                </FilmGrid>
               )}
             </li>
           ))}
