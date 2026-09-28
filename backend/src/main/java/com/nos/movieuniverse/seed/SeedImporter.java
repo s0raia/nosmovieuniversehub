@@ -184,7 +184,7 @@ public class SeedImporter {
             Playlist playlist;
 
             if (existing.isEmpty()) {
-                playlist = new Playlist(seedPlaylist.name(), requireUser(usersByName, seedPlaylist.ownerUsername()));
+                playlist = new Playlist(seedPlaylist.name(), resolveUser(usersByName, seedPlaylist.ownerUsername()));
                 playlist.setExternalId(seedPlaylist.externalId());
                 applyDeletedFlag(playlist, seedPlaylist.deleted());
                 playlist = playlistRepository.save(playlist);
@@ -243,7 +243,7 @@ public class SeedImporter {
             SeedFile seed, Map<String, AppUser> usersByName, Map<Long, Movie> filmsById, Counters counters) {
 
         for (SeedRating seedRating : seed.ratings()) {
-            AppUser user = requireUser(usersByName, seedRating.username());
+            AppUser user = resolveUser(usersByName, seedRating.username());
             Optional<UserRating> existing =
                     userRatingRepository.findByUserIdAndMovieTmdbId(user.getId(), seedRating.tmdbId());
 
@@ -271,12 +271,20 @@ public class SeedImporter {
         }
     }
 
-    private AppUser requireUser(Map<String, AppUser> usersByName, String username) {
+    /**
+     * Resolves a playlist or rating owner. Supplementary files such as
+     * {@code mock_extra.json} may reference users who were created by an earlier
+     * import, so the lookup falls back to the database.
+     */
+    private AppUser resolveUser(Map<String, AppUser> usersByName, String username) {
         AppUser user = usersByName.get(username);
-        if (user == null) {
-            throw new IllegalStateException(
-                    "Seed file references user \"" + username + "\", who is not in its own user list");
+        if (user != null) {
+            return user;
         }
+        user = userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Seed file references unknown user \"" + username + "\""));
+        usersByName.put(username, user);
         return user;
     }
 
